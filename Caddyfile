@@ -1,0 +1,17 @@
+# CalendarRecord 反向代理与静态资源服务
+# SITE_ADDRESS 默认 localhost（本地自签证书）；生产环境设为域名后 Caddy 自动签发 HTTPS 证书。
+{$SITE_ADDRESS:localhost} {
+	encode gzip
+
+	# 后端 API 反向代理
+	handle /api/* {
+		reverse_proxy api:8000
+	}
+
+	# 前端静态资源 + SPA 回退
+	handle {
+		root * /srv
+		try_files {path} /index.html
+		file_server
+	}
+}
