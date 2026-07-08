@@ -3,7 +3,7 @@ import { useAuth } from "./store/auth";
 import { useTasks, useTypes, useUsers } from "./hooks/queries";
 import { buildDateRange, dayjs, FMT, today } from "./lib/date";
 import { parseSearch } from "./lib/logic";
-import type { CardDisplayMode, GanttMode, Task, ViewMode } from "./types";
+import type { CardDisplayMode, EmptyDayStyle, GanttMode, Task, ViewMode } from "./types";
 import Login from "./components/Login";
 import TopBar from "./components/TopBar";
 import Toolbar from "./components/Toolbar";
@@ -18,6 +18,7 @@ const THRESHOLD_KEY = "cr_delay_threshold";
 const DISPLAY_MODE_KEY = "cr_card_display_mode";
 const GANTT_MODE_KEY = "cr_gantt_mode";
 const GANTT_LANES_KEY = "cr_gantt_lanes";
+const EMPTY_DAY_STYLE_KEY = "cr_empty_day_style";
 
 export default function App() {
   const { user, loading } = useAuth();
@@ -40,6 +41,9 @@ export default function App() {
   );
   const [ganttLanes, setGanttLanes] = useState<number>(
     Number(localStorage.getItem(GANTT_LANES_KEY)) || 3
+  );
+  const [emptyDayStyle, setEmptyDayStyle] = useState<EmptyDayStyle>(
+    (localStorage.getItem(EMPTY_DAY_STYLE_KEY) as EmptyDayStyle) || "dim"
   );
 
   const [editingTask, setEditingTask] = useState<Task | null>(null);
@@ -95,6 +99,11 @@ export default function App() {
     localStorage.setItem(GANTT_LANES_KEY, String(v));
   };
 
+  const updateEmptyDayStyle = (s: EmptyDayStyle) => {
+    setEmptyDayStyle(s);
+    localStorage.setItem(EMPTY_DAY_STYLE_KEY, s);
+  };
+
   const visibleTasks = useMemo(
     () => tasks.filter((t) => t.type_id == null || !hiddenTypes.has(t.type_id)),
     [tasks, hiddenTypes]
@@ -123,6 +132,8 @@ export default function App() {
         setGanttMode={updateGanttMode}
         ganttLanes={ganttLanes}
         setGanttLanes={updateGanttLanes}
+        emptyDayStyle={emptyDayStyle}
+        setEmptyDayStyle={updateEmptyDayStyle}
       />
 
       <Toolbar
@@ -173,6 +184,7 @@ export default function App() {
             mode={displayMode}
             ganttMode={ganttMode}
             ganttLanes={ganttLanes}
+            emptyDayStyle={emptyDayStyle}
           />
         )}
       </main>

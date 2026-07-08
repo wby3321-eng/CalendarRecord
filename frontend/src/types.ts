@@ -58,6 +58,8 @@ export type ViewMode = "week" | "month" | "custom";
 export type CardDisplayMode = "default" | "typeColor";
 // 跨天任务的甘特展示：lane=保留泳道条（超出转卡片） / card=全部作为带甘特标志的卡片
 export type GanttMode = "lane" | "card";
+// 无任务日期的弱化方式：dim=仅视觉弱化不改尺寸 / shrink=缩小格子高度
+export type EmptyDayStyle = "dim" | "shrink";
 
 export interface AIPreset {
   key: string;

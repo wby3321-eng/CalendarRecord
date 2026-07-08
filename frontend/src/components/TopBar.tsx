@@ -1,5 +1,5 @@
 import { useAuth } from "../store/auth";
-import type { CardDisplayMode, GanttMode, User } from "../types";
+import type { CardDisplayMode, EmptyDayStyle, GanttMode, User } from "../types";
 import Settings from "./Settings";
 
 interface Props {
@@ -14,6 +14,8 @@ interface Props {
   setGanttMode: (m: GanttMode) => void;
   ganttLanes: number;
   setGanttLanes: (n: number) => void;
+  emptyDayStyle: EmptyDayStyle;
+  setEmptyDayStyle: (s: EmptyDayStyle) => void;
 }
 
 export default function TopBar({
@@ -28,6 +30,8 @@ export default function TopBar({
   setGanttMode,
   ganttLanes,
   setGanttLanes,
+  emptyDayStyle,
+  setEmptyDayStyle,
 }: Props) {
   const { user, logout } = useAuth();
   const isAdmin = user?.role === "admin";
@@ -75,6 +79,8 @@ export default function TopBar({
           setGanttMode={setGanttMode}
           ganttLanes={ganttLanes}
           setGanttLanes={setGanttLanes}
+          emptyDayStyle={emptyDayStyle}
+          setEmptyDayStyle={setEmptyDayStyle}
         />
         <button
           onClick={logout}

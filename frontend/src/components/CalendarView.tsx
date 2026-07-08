@@ -1,5 +1,5 @@
 import { useRef, useState, type Dispatch, type SetStateAction } from "react";
-import type { CardDisplayMode, GanttMode, Task, TaskType, ViewMode } from "../types";
+import type { CardDisplayMode, EmptyDayStyle, GanttMode, Task, TaskType, ViewMode } from "../types";
 import { useTaskMutations } from "../hooks/queries";
 import {
   addDays,
@@ -29,6 +29,7 @@ interface Props {
   mode: CardDisplayMode;
   ganttMode: GanttMode;
   ganttLanes: number;
+  emptyDayStyle: EmptyDayStyle;
 }
 
 const SPAN_LANE_H = 20;
@@ -106,6 +107,7 @@ export default function CalendarView(p: Props) {
             mode={p.mode}
             ganttMode={p.ganttMode}
             ganttLanes={p.ganttLanes}
+            emptyDayStyle={p.emptyDayStyle}
           />
         ))}
       </div>
@@ -128,6 +130,7 @@ interface RowProps {
   mode: CardDisplayMode;
   ganttMode: GanttMode;
   ganttLanes: number;
+  emptyDayStyle: EmptyDayStyle;
 }
 
 function WeekRow(r: RowProps) {
@@ -326,25 +329,49 @@ function WeekRow(r: RowProps) {
       )}
 
       {/* 日期格子 */}
-      <div ref={cellsRef} className="grid grid-cols-7 gap-2">
+      <div
+        ref={cellsRef}
+        className={`grid grid-cols-7 gap-2 ${r.emptyDayStyle === "shrink" ? "items-start" : ""}`}
+      >
         {r.days.map((d) => {
           const mark = getDayMark(d);
           const dnum = Number(d.slice(8, 10));
           const isMuted = r.muted.has(d);
           const today = isToday(d);
           const cards = cardsByDay.get(d) || [];
+          const isEmpty = !today && cards.length === 0;
+          const compact = r.emptyDayStyle === "shrink" && isEmpty;
+          const bgBorder = today
+            ? "border-brand-600 ring-2 ring-brand-100 bg-brand-50"
+            : isMuted
+            ? "border-slate-200 opacity-50 bg-slate-50"
+            : isEmpty
+            ? "border-slate-100 bg-slate-50"
+            : "border-slate-200 bg-white";
+          const dateCls = today
+            ? "text-[17px] font-extrabold text-brand-700"
+            : isEmpty
+            ? "text-[15px] font-bold text-slate-300"
+            : "text-[15px] font-bold text-slate-700";
           return (
             <div
               key={d}
-              className={`flex flex-col rounded-card border bg-white overflow-hidden min-h-[132px] sm:min-h-[148px] transition ${
-                today ? "border-brand-600 ring-2 ring-brand-100" : "border-slate-200"
-              } ${isMuted ? "opacity-50 bg-slate-50" : ""}`}
+              onClick={compact ? () => r.onAddTask(d) : undefined}
+              title={compact ? "新增任务" : undefined}
+              className={`flex flex-col rounded-card border overflow-hidden transition ${
+                compact ? "min-h-[46px] cursor-pointer hover:bg-brand-50" : "min-h-[132px] sm:min-h-[148px]"
+              } ${bgBorder}`}
             >
-              <div className="flex items-center justify-between px-2 py-1.5 border-b border-slate-100">
+              <div
+                className={`flex items-center justify-between px-2 py-1.5 ${compact ? "" : "border-b border-slate-100"}`}
+              >
                 <div className="flex items-baseline gap-1">
-                  <span className={`text-[15px] font-bold ${today ? "text-brand-700" : "text-slate-700"}`}>
-                    {dnum}
-                  </span>
+                  <span className={dateCls}>{dnum}</span>
+                  {today && (
+                    <span className="text-[10px] font-bold text-white bg-brand-600 rounded px-1 leading-tight">
+                      今
+                    </span>
+                  )}
                 </div>
                 {mark?.type === "holiday" && (
                   <span className="text-[10px] font-bold text-red-600 bg-red-50 rounded px-1.5 py-px truncate max-w-[70px]">
@@ -356,7 +383,9 @@ function WeekRow(r: RowProps) {
                 )}
               </div>
 
-              <div className="flex-1 overflow-y-auto p-1.5 flex flex-col gap-1.5">
+              {!compact && (
+                <>
+                  <div className="flex-1 overflow-y-auto p-1.5 flex flex-col gap-1.5">
                 {cards.slice(0, MAX_CARDS).map((task) => {
                   const type = task.type_id != null ? r.typeMap.get(task.type_id) : undefined;
                   const dragging = r.dragState?.taskId === task.id && r.dragState.moved;
@@ -422,6 +451,8 @@ function WeekRow(r: RowProps) {
               >
                 ＋ 新增任务
               </button>
+                </>
+              )}
             </div>
           );
         })}
