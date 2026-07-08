@@ -13,6 +13,7 @@ import TaskCard from "./components/TaskCard";
 import TaskDrawer from "./components/TaskDrawer";
 import TypeManager from "./components/TypeManager";
 import AIPanel from "./components/AIPanel";
+import PaperView from "./components/PaperView";
 
 const THRESHOLD_KEY = "cr_delay_threshold";
 const DISPLAY_MODE_KEY = "cr_card_display_mode";
@@ -50,6 +51,7 @@ export default function App() {
   const [creatingDate, setCreatingDate] = useState<string | null>(null);
   const [showTypeManager, setShowTypeManager] = useState(false);
   const [showAI, setShowAI] = useState(false);
+  const [paperDate, setPaperDate] = useState<string | null>(null);
 
   const searching = query.trim().length > 0;
   const isAdmin = user?.role === "admin";
@@ -108,6 +110,15 @@ export default function App() {
     () => tasks.filter((t) => t.type_id == null || !hiddenTypes.has(t.type_id)),
     [tasks, hiddenTypes]
   );
+
+  // 当日报纸：与该日相交的任务（含跨天），按优先级降序排列作为默认版序
+  const paperTasks = useMemo(() => {
+    if (!paperDate) return [];
+    const rank: Record<string, number> = { high: 0, medium: 1, low: 2 };
+    return visibleTasks
+      .filter((t) => t.plan_start_date <= paperDate && t.plan_due_date >= paperDate)
+      .sort((a, b) => rank[a.priority] - rank[b.priority] || a.id - b.id);
+  }, [visibleTasks, paperDate]);
 
   if (loading) {
     return (
@@ -180,6 +191,7 @@ export default function App() {
             isLoading={isLoading}
             onOpenTask={setEditingTask}
             onAddTask={(d) => setCreatingDate(d)}
+            onOpenPaper={setPaperDate}
             ownerMap={cardOwnerMap}
             mode={displayMode}
             ganttMode={ganttMode}
@@ -188,6 +200,19 @@ export default function App() {
           />
         )}
       </main>
+
+      {paperDate && (
+        <PaperView
+          date={paperDate}
+          tasks={paperTasks}
+          types={types}
+          threshold={threshold}
+          ownerMap={cardOwnerMap}
+          onOpenTask={setEditingTask}
+          onAdd={() => setCreatingDate(paperDate)}
+          onClose={() => setPaperDate(null)}
+        />
+      )}
 
       {(editingTask || creatingDate) && (
         <TaskDrawer
@@ -209,13 +234,15 @@ export default function App() {
         <AIPanel params={taskParams} onClose={() => setShowAI(false)} />
       )}
 
-      {/* AI 悬浮球 */}
-      <button
-        onClick={() => setShowAI(true)}
-        className="fixed right-6 bottom-6 z-40 flex items-center gap-2 rounded-full px-5 py-3 text-sm font-bold text-white shadow-cardlg bg-gradient-to-br from-brand-600 to-brand-400 hover:-translate-y-0.5 transition"
-      >
-        🤖 AI 分析
-      </button>
+      {/* AI 悬浮球（报纸浮层打开时隐藏，避免遮挡） */}
+      {!paperDate && (
+        <button
+          onClick={() => setShowAI(true)}
+          className="fixed right-6 bottom-6 z-40 flex items-center gap-2 rounded-full px-5 py-3 text-sm font-bold text-white shadow-cardlg bg-gradient-to-br from-brand-600 to-brand-400 hover:-translate-y-0.5 transition"
+        >
+          🤖 AI 分析
+        </button>
+      )}
     </div>
   );
 }

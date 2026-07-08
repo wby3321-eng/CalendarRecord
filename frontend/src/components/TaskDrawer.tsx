@@ -107,142 +107,177 @@ export default function TaskDrawer({ task, defaultDate, types, onClose }: Props)
     return <input value={val} onChange={(e) => set(e.target.value)} className={inputCls} placeholder={type === "link" ? "https://" : ""} />;
   };
 
+  const typeColor = selectedType?.color || "#3b82f6";
+  const summary = `计划 ${startDate.slice(5)} → ${dueDate.slice(5)} · ${PRIORITY_LABEL[priority]}优先级`;
+
   return (
-    <div className="fixed inset-0 z-40 flex justify-end bg-black/30" onClick={onClose}>
+    <div
+      className="fixed inset-0 z-40 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4"
+      onClick={onClose}
+    >
       <div
-        className="w-full max-w-md h-full bg-white shadow-cardlg overflow-auto animate-pop"
+        className="w-full max-w-2xl max-h-[88vh] flex flex-col bg-white rounded-2xl shadow-cardlg overflow-hidden animate-pop"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100 sticky top-0 bg-white">
-          <h3 className="font-semibold text-slate-700">{isEdit ? "编辑任务" : "新增任务"}</h3>
-          <button onClick={onClose} className="text-slate-400 hover:text-slate-600">✕</button>
+        {/* 顶部类型色渐变条 */}
+        <div
+          className="h-1.5 w-full shrink-0"
+          style={{ backgroundImage: `linear-gradient(90deg, ${typeColor}, ${typeColor}22)` }}
+        />
+
+        {/* 头部 */}
+        <div className="flex items-start justify-between px-6 pt-4 pb-3 border-b border-slate-100 shrink-0">
+          <div>
+            <h3 className="text-lg font-bold text-slate-800">{isEdit ? "编辑任务" : "新增任务"}</h3>
+            <p className="text-xs text-slate-400 mt-0.5">{summary}</p>
+          </div>
+          <button
+            onClick={onClose}
+            className="text-slate-400 hover:text-slate-600 text-lg leading-none -mr-1 -mt-0.5"
+          >
+            ✕
+          </button>
         </div>
 
-        <div className="p-4 space-y-3">
-          <Field label="任务名称 *">
-            <input value={title} onChange={(e) => setTitle(e.target.value)} className={inputCls} autoFocus />
-          </Field>
-
-          <div className="grid grid-cols-2 gap-3">
-            <Field label="类型">
-              <select value={typeId ?? ""} onChange={(e) => setTypeId(e.target.value ? Number(e.target.value) : null)} className={inputCls}>
-                <option value="">未分类</option>
-                {types.map((t) => (
-                  <option key={t.id} value={t.id}>{t.name}</option>
-                ))}
-              </select>
+        {/* 主体 */}
+        <div className="flex-1 overflow-auto px-6 py-5 space-y-6">
+          <Section title="基本信息">
+            <Field label="任务名称 *">
+              <input value={title} onChange={(e) => setTitle(e.target.value)} className={inputCls} autoFocus />
             </Field>
-            <Field label="优先级">
-              <select value={priority} onChange={(e) => setPriority(e.target.value as Priority)} className={inputCls}>
-                {(["high", "medium", "low"] as Priority[]).map((p) => (
-                  <option key={p} value={p}>{PRIORITY_LABEL[p]}</option>
-                ))}
-              </select>
-            </Field>
-          </div>
 
-          <Field label="状态">
-            <div className="flex gap-2">
-              {STATUSES.map((s) => (
-                <button
-                  key={s}
-                  onClick={() => setStatus(s)}
-                  className={`flex-1 py-1.5 rounded-lg text-sm border ${
-                    status === s ? "bg-brand-50 border-brand-500 text-brand-600" : "border-slate-200 text-slate-500"
-                  }`}
-                >
-                  {STATUS_LABEL[s]}
-                </button>
-              ))}
+            <div className="grid grid-cols-2 gap-3">
+              <Field label="类型">
+                <select value={typeId ?? ""} onChange={(e) => setTypeId(e.target.value ? Number(e.target.value) : null)} className={inputCls}>
+                  <option value="">未分类</option>
+                  {types.map((t) => (
+                    <option key={t.id} value={t.id}>{t.name}</option>
+                  ))}
+                </select>
+              </Field>
+              <Field label="优先级">
+                <select value={priority} onChange={(e) => setPriority(e.target.value as Priority)} className={inputCls}>
+                  {(["high", "medium", "low"] as Priority[]).map((p) => (
+                    <option key={p} value={p}>{PRIORITY_LABEL[p]}</option>
+                  ))}
+                </select>
+              </Field>
             </div>
-          </Field>
 
-          <div className="grid grid-cols-2 gap-3">
-            <Field label="计划开始日">
-              <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className={inputCls} />
-            </Field>
-            <Field label="计划完成日">
-              <input type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} className={inputCls} />
-            </Field>
-          </div>
-
-          <Field label="链接">
-            <input value={link} onChange={(e) => setLink(e.target.value)} className={inputCls} placeholder="https://" />
-          </Field>
-
-          {isEdit && (
-            <Field label="延期次数">
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-slate-600">
-                  已延期 <span className="font-semibold text-slate-700">{rescheduleCount}</span> 次
-                </span>
-                <button
-                  type="button"
-                  onClick={resetDelay}
-                  disabled={rescheduleCount === 0 || resetReschedule.isPending}
-                  className="px-2.5 py-1 text-xs rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed"
-                >
-                  {resetReschedule.isPending ? "重置中…" : "重置"}
-                </button>
+            <Field label="状态">
+              <div className="flex gap-2">
+                {STATUSES.map((s) => (
+                  <button
+                    key={s}
+                    onClick={() => setStatus(s)}
+                    className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl text-sm border transition ${
+                      status === s
+                        ? "bg-brand-50 border-brand-500 text-brand-700 font-medium"
+                        : "border-slate-200 text-slate-500 hover:bg-slate-50"
+                    }`}
+                  >
+                    <span className={`w-1.5 h-1.5 rounded-full ${STATUS_DOT[s]}`} />
+                    {STATUS_LABEL[s]}
+                  </button>
+                ))}
               </div>
             </Field>
-          )}
+          </Section>
 
-          <Field label="结论">
-            <textarea value={conclusion} onChange={(e) => setConclusion(e.target.value)} rows={3} className={inputCls} />
-          </Field>
-
-          {selectedType && selectedType.field_defs.length > 0 && (
-            <div className="border-t border-slate-100 pt-3 space-y-3">
-              <div className="text-xs text-slate-400">扩展字段（{selectedType.name}）</div>
-              {selectedType.field_defs.map((fd) => (
-                <Field key={fd.key} label={fd.label}>
-                  {fieldInput(fd.key, fd.type)}
-                </Field>
-              ))}
+          <Section title="计划安排">
+            <div className="grid grid-cols-2 gap-3">
+              <Field label="计划开始日">
+                <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className={inputCls} />
+              </Field>
+              <Field label="计划完成日">
+                <input type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} className={inputCls} />
+              </Field>
             </div>
-          )}
 
-          {/* 附件 */}
-          <div className="border-t border-slate-100 pt-3">
-            <div className="text-xs text-slate-400 mb-2">附件</div>
-            {!isEdit ? (
-              <div className="text-xs text-slate-400">保存任务后可添加附件</div>
-            ) : (
-              <>
-                <div className="space-y-1 mb-2">
-                  {attachments.map((a) => (
-                    <div key={a.id} className="flex items-center gap-2 text-sm bg-slate-50 rounded px-2 py-1">
-                      <span>{a.kind === "image" ? "🖼️" : "📎"}</span>
-                      <a href={a.url} target="_blank" rel="noreferrer" className="flex-1 truncate text-brand-600 hover:underline">
-                        {a.filename}
-                      </a>
-                      <button onClick={() => delAtt(a.id)} className="text-slate-400 hover:text-red-500">✕</button>
-                    </div>
-                  ))}
+            <Field label="链接">
+              <input value={link} onChange={(e) => setLink(e.target.value)} className={inputCls} placeholder="https://" />
+            </Field>
+
+            {isEdit && (
+              <Field label="延期次数">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-slate-600">
+                    已延期 <span className="font-semibold text-slate-700">{rescheduleCount}</span> 次
+                  </span>
+                  <button
+                    type="button"
+                    onClick={resetDelay}
+                    disabled={rescheduleCount === 0 || resetReschedule.isPending}
+                    className="px-2.5 py-1 text-xs rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed"
+                  >
+                    {resetReschedule.isPending ? "重置中…" : "重置"}
+                  </button>
                 </div>
-                <label className="inline-block text-sm text-brand-600 cursor-pointer hover:underline">
-                  + 上传文件/图片
-                  <input type="file" className="hidden" onChange={onUpload} />
-                </label>
-              </>
+              </Field>
             )}
-          </div>
+          </Section>
+
+          <Section title="结论与附件">
+            <Field label="结论">
+              <textarea value={conclusion} onChange={(e) => setConclusion(e.target.value)} rows={3} className={inputCls} />
+            </Field>
+
+            {selectedType && selectedType.field_defs.length > 0 && (
+              <div className="space-y-3">
+                <div className="text-xs text-slate-400">扩展字段（{selectedType.name}）</div>
+                {selectedType.field_defs.map((fd) => (
+                  <Field key={fd.key} label={fd.label}>
+                    {fieldInput(fd.key, fd.type)}
+                  </Field>
+                ))}
+              </div>
+            )}
+
+            <div>
+              <div className="text-xs text-slate-500 mb-1.5">附件</div>
+              {!isEdit ? (
+                <div className="text-xs text-slate-400 bg-slate-50 rounded-lg px-3 py-2">保存任务后可添加附件</div>
+              ) : (
+                <>
+                  <div className="space-y-1 mb-2">
+                    {attachments.map((a) => (
+                      <div key={a.id} className="flex items-center gap-2 text-sm bg-slate-50 rounded-lg px-2.5 py-1.5">
+                        <span>{a.kind === "image" ? "🖼️" : "📎"}</span>
+                        <a href={a.url} target="_blank" rel="noreferrer" className="flex-1 truncate text-brand-600 hover:underline">
+                          {a.filename}
+                        </a>
+                        <button onClick={() => delAtt(a.id)} className="text-slate-400 hover:text-red-500">✕</button>
+                      </div>
+                    ))}
+                  </div>
+                  <label className="inline-block text-sm text-brand-600 cursor-pointer hover:underline">
+                    + 上传文件/图片
+                    <input type="file" className="hidden" onChange={onUpload} />
+                  </label>
+                </>
+              )}
+            </div>
+          </Section>
 
           {err && <div className="text-sm text-red-500">{err}</div>}
         </div>
 
-        <div className="flex gap-2 px-4 py-3 border-t border-slate-100 sticky bottom-0 bg-white">
+        {/* 底部操作栏 */}
+        <div className="flex gap-2 px-6 py-4 border-t border-slate-100 shrink-0 bg-white">
           {isEdit && (
-            <button onClick={del} className="px-3 py-2 text-sm text-red-500 hover:bg-red-50 rounded-lg">
+            <button onClick={del} className="px-3 py-2.5 text-sm text-red-500 hover:bg-red-50 rounded-lg">
               删除
             </button>
           )}
           <div className="flex-1" />
-          <button onClick={onClose} className="px-4 py-2 text-sm text-slate-500 hover:bg-slate-100 rounded-lg">
+          <button onClick={onClose} className="px-4 py-2.5 text-sm text-slate-500 hover:bg-slate-100 rounded-lg">
             取消
           </button>
-          <button onClick={save} disabled={busy} className="px-4 py-2 text-sm bg-brand-600 text-white rounded-lg hover:bg-brand-700 disabled:opacity-50">
+          <button
+            onClick={save}
+            disabled={busy}
+            className="px-6 py-2.5 text-sm font-medium bg-brand-600 text-white rounded-lg shadow-card hover:bg-brand-700 disabled:opacity-50"
+          >
             {busy ? "保存中…" : "保存"}
           </button>
         </div>
@@ -252,7 +287,22 @@ export default function TaskDrawer({ task, defaultDate, types, onClose }: Props)
 }
 
 const inputCls =
-  "w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-brand-500 outline-none";
+  "w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-100 outline-none transition";
+
+const STATUS_DOT: Record<Status, string> = {
+  todo: "bg-slate-400",
+  "in-progress": "bg-amber-500",
+  done: "bg-emerald-500",
+};
+
+function Section({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <section className="space-y-3">
+      <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">{title}</div>
+      {children}
+    </section>
+  );
+}
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (

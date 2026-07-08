@@ -25,6 +25,7 @@ interface Props {
   isLoading: boolean;
   onOpenTask: (t: Task) => void;
   onAddTask: (date: string) => void;
+  onOpenPaper: (date: string) => void;
   ownerMap?: Record<number, string>;
   mode: CardDisplayMode;
   ganttMode: GanttMode;
@@ -103,6 +104,7 @@ export default function CalendarView(p: Props) {
             onCommitDrag={(id, mode, start, due) => drag.mutate({ id, mode, start, due })}
             onOpenTask={p.onOpenTask}
             onAddTask={p.onAddTask}
+            onOpenPaper={p.onOpenPaper}
             ownerMap={p.ownerMap}
             mode={p.mode}
             ganttMode={p.ganttMode}
@@ -126,6 +128,7 @@ interface RowProps {
   onCommitDrag: (id: number, mode: DragMode, start?: string, due?: string) => void;
   onOpenTask: (t: Task) => void;
   onAddTask: (date: string) => void;
+  onOpenPaper: (date: string) => void;
   ownerMap?: Record<number, string>;
   mode: CardDisplayMode;
   ganttMode: GanttMode;
@@ -365,7 +368,14 @@ function WeekRow(r: RowProps) {
               <div
                 className={`flex items-center justify-between px-2 py-1.5 ${compact ? "" : "border-b border-slate-100"}`}
               >
-                <div className="flex items-baseline gap-1">
+                <div
+                  className="flex items-baseline gap-1 cursor-pointer rounded px-1 -mx-1 hover:bg-brand-100/60"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    r.onOpenPaper(d);
+                  }}
+                  title="查看当日报纸"
+                >
                   <span className={dateCls}>{dnum}</span>
                   {today && (
                     <span className="text-[10px] font-bold text-white bg-brand-600 rounded px-1 leading-tight">
