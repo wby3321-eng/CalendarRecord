@@ -50,7 +50,12 @@ export default function TypeManager({ types, onClose }: Props) {
                       <span>{typeEmoji(t.icon)}</span>
                       <span className="flex-1 text-sm text-slate-700">{t.name}</span>
                       <span className="text-xs text-slate-400">{t.field_defs.length} 个字段</span>
-                      <button onClick={() => setEditing(t)} className="text-sm text-slate-500 hover:text-brand-600">编辑</button>
+                      <button onClick={() => setEditing(t)} title="编辑" className="rounded p-1 text-slate-400 hover:bg-brand-50 hover:text-brand-600">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4">
+                          <path d="M12 20h9" />
+                          <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4Z" />
+                        </svg>
+                      </button>
                     </div>
                   )
                 )}
@@ -90,7 +95,12 @@ export default function TypeManager({ types, onClose }: Props) {
                     <span>{typeEmoji(t.icon)}</span>
                     <span className="flex-1 text-sm text-slate-700">{t.name}</span>
                     <span className="text-xs text-slate-400">{t.field_defs.length} 个字段</span>
-                    <button onClick={() => setEditing(t)} className="text-sm text-slate-500 hover:text-brand-600">编辑</button>
+                    <button onClick={() => setEditing(t)} title="编辑" className="rounded p-1 text-slate-400 hover:bg-brand-50 hover:text-brand-600">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4">
+                        <path d="M12 20h9" />
+                        <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4Z" />
+                      </svg>
+                    </button>
                   </div>
                 )
               )}
@@ -192,7 +202,15 @@ function TypeEditor({ type, onDone, allowDelete = true }: { type?: TaskType; onD
 
       <div className="flex gap-2">
         {type && allowDelete && (
-          <button onClick={del} className="px-2 py-1 text-sm text-red-500 hover:bg-red-50 rounded">删除</button>
+          <button onClick={del} title="删除类型" className="rounded p-1.5 text-red-500 hover:bg-red-50">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4">
+              <path d="M3 6h18" />
+              <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+              <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+              <line x1="10" x2="10" y1="11" y2="17" />
+              <line x1="14" x2="14" y1="11" y2="17" />
+            </svg>
+          </button>
         )}
         <div className="flex-1" />
         <button onClick={onDone} className="px-3 py-1 text-sm text-slate-500 hover:bg-slate-100 rounded">取消</button>

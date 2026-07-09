@@ -74,9 +74,10 @@ export default function TypeChips({ types, tasks, selectedTypes, setSelectedType
 
       <button
         onClick={onManage}
-        className="ml-1.5 inline-flex items-center gap-1.5 rounded-full border-[1.5px] border-dashed border-slate-300 px-3 py-1 text-[13px] font-semibold text-brand-700 hover:bg-brand-50 transition"
+        title="类型管理"
+        className="ml-1.5 inline-flex items-center justify-center rounded-full border-[1.5px] border-dashed border-slate-300 px-2.5 py-1 text-[15px] leading-none text-brand-700 hover:bg-brand-50 transition"
       >
-        ⚙️ 类型管理
+        ⚙️
       </button>
     </div>
   );
