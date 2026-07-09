@@ -1,4 +1,6 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { api } from "../api/client";
+import { useAuth } from "../store/auth";
 import type { CardDisplayMode, EmptyDayStyle, GanttMode } from "../types";
 
 interface Props {
@@ -87,100 +89,187 @@ export default function Settings({
   emptyDayStyle,
   setEmptyDayStyle,
 }: Props) {
+  const { user, setUser } = useAuth();
   const [open, setOpen] = useState(false);
+  const wrapRef = useRef<HTMLDivElement>(null);
+
+  const [editingNick, setEditingNick] = useState(false);
+  const [nick, setNick] = useState(user?.nickname || "");
+  const [savingNick, setSavingNick] = useState(false);
 
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => e.key === "Escape" && setOpen(false);
+    const onDown = (e: MouseEvent) => {
+      if (wrapRef.current && !wrapRef.current.contains(e.target as Node)) setOpen(false);
+    };
     window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
+    document.addEventListener("mousedown", onDown);
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      document.removeEventListener("mousedown", onDown);
+    };
   }, [open]);
 
+  // 打开面板 / 用户变化时同步昵称草稿，退出编辑态
+  useEffect(() => {
+    setNick(user?.nickname || "");
+    setEditingNick(false);
+  }, [open, user?.nickname]);
+
+  const isAdmin = user?.role === "admin";
+  const displayName = user?.nickname || user?.username || "";
+  const initial = displayName.slice(0, 1).toUpperCase();
+
+  const saveNick = async () => {
+    const v = nick.trim();
+    if (!v || v === user?.nickname) {
+      setEditingNick(false);
+      setNick(user?.nickname || "");
+      return;
+    }
+    setSavingNick(true);
+    try {
+      const u = await api.updateMe(v);
+      setUser(u);
+      setEditingNick(false);
+    } catch {
+      /* 保存失败保留编辑态 */
+    } finally {
+      setSavingNick(false);
+    }
+  };
+
   return (
-    <>
+    <div className="relative" ref={wrapRef}>
       <button
-        onClick={() => setOpen(true)}
-        title="偏好设置"
-        className={`border rounded-lg px-3 py-1.5 transition ${
-          open
-            ? "border-brand-500 bg-brand-50 text-brand-700"
-            : "border-slate-200 text-slate-600 hover:bg-slate-50"
+        onClick={() => setOpen((o) => !o)}
+        title="账户与偏好设置"
+        className={`flex items-center gap-2 rounded-lg py-1 pl-1 pr-2 transition ${
+          open ? "bg-brand-50 ring-1 ring-brand-200" : "hover:bg-slate-100"
         }`}
       >
-        ⚙️
+        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-brand-600 to-brand-400 text-[13px] font-bold text-white">
+          {initial}
+        </span>
+        <span className="max-w-[120px] truncate text-[13px] font-medium text-slate-700">{displayName}</span>
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          className={`h-3.5 w-3.5 shrink-0 text-slate-400 transition ${open ? "rotate-180" : ""}`}
+        >
+          <path d="m6 9 6 6 6-6" />
+        </svg>
       </button>
 
       {open && (
-        <div
-          className="fixed inset-0 z-40 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4"
-          onClick={() => setOpen(false)}
-        >
-          <div
-            className="flex max-h-[88vh] w-full max-w-lg flex-col overflow-hidden rounded-2xl bg-white shadow-cardlg animate-pop"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="h-1.5 shrink-0 bg-gradient-to-r from-brand-600 via-brand-500 to-brand-400" />
-
-            <div className="flex shrink-0 items-center justify-between px-6 pt-5 pb-4 border-b border-slate-100">
-              <div>
-                <h2 className="text-lg font-bold text-slate-800">⚙️ 偏好设置</h2>
-                <p className="mt-0.5 text-[12px] text-slate-400">日历展示与提醒规则</p>
-              </div>
-              <button
-                onClick={() => setOpen(false)}
-                title="关闭"
-                className="rounded-lg p-1.5 text-slate-400 transition hover:bg-slate-100 hover:text-slate-600"
-              >
-                ✕
-              </button>
+        <div className="absolute right-0 top-full z-40 mt-2 flex max-h-[calc(100vh-5rem)] w-[min(92vw,384px)] origin-top-right flex-col overflow-hidden rounded-2xl bg-white shadow-cardlg ring-1 ring-black/5 animate-pop">
+          {/* 账户：头像 + 昵称（可就地修改） */}
+          <div className="flex shrink-0 items-center gap-3 border-b border-slate-100 px-4 py-4">
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-brand-600 to-brand-400 text-lg font-bold text-white shadow-card">
+              {initial}
             </div>
+            <div className="min-w-0 flex-1">
+              {editingNick ? (
+                <div className="flex items-center gap-1.5">
+                  <input
+                    autoFocus
+                    value={nick}
+                    disabled={savingNick}
+                    maxLength={20}
+                    onChange={(e) => setNick(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        saveNick();
+                      } else if (e.key === "Escape") {
+                        e.preventDefault();
+                        setEditingNick(false);
+                        setNick(user?.nickname || "");
+                      }
+                    }}
+                    className="min-w-0 flex-1 rounded-lg border border-brand-300 px-2 py-1 text-sm font-semibold text-slate-800 outline-none ring-2 ring-brand-100"
+                    placeholder="输入昵称"
+                  />
+                  <button
+                    onClick={saveNick}
+                    disabled={savingNick}
+                    title="保存"
+                    className="shrink-0 rounded-lg bg-brand-600 px-2 py-1 text-xs font-semibold text-white transition hover:bg-brand-700 disabled:opacity-50"
+                  >
+                    ✓
+                  </button>
+                </div>
+              ) : (
+                <div className="flex items-center gap-1.5">
+                  <span className="truncate text-[15px] font-bold text-slate-800">{displayName}</span>
+                  <button
+                    onClick={() => setEditingNick(true)}
+                    title="修改昵称"
+                    className="shrink-0 rounded-md p-0.5 text-slate-400 transition hover:bg-slate-100 hover:text-brand-600"
+                  >
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-3.5 w-3.5">
+                      <path d="M12 20h9" />
+                      <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z" />
+                    </svg>
+                  </button>
+                </div>
+              )}
+              <div className="mt-0.5 truncate text-xs text-slate-400">
+                @{user?.username} · {isAdmin ? "管理员" : "用户"}
+              </div>
+            </div>
+          </div>
 
-            <div className="flex-1 overflow-y-auto px-6 py-5 flex flex-col gap-6">
-              <Section title="卡片展示方式">
-                <RadioCards name="cr-display-mode" options={DISPLAY_OPTIONS} value={displayMode} onChange={setDisplayMode} />
-              </Section>
+          <div className="flex flex-1 flex-col gap-6 overflow-y-auto px-5 py-5">
+            <Section title="卡片展示方式">
+              <RadioCards name="cr-display-mode" options={DISPLAY_OPTIONS} value={displayMode} onChange={setDisplayMode} />
+            </Section>
 
-              <Section title="跨天任务展示">
-                <RadioCards name="cr-gantt-mode" options={GANTT_OPTIONS} value={ganttMode} onChange={setGanttMode} />
-                {ganttMode === "lane" && (
-                  <label className="mt-2 flex items-center gap-2 text-[13px] text-slate-600">
-                    最多保留
-                    <input
-                      type="number"
-                      min={1}
-                      max={6}
-                      value={ganttLanes}
-                      onChange={(e) => setGanttLanes(Number(e.target.value))}
-                      className="w-14 rounded-lg border border-slate-200 px-2 py-1 text-center outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-100"
-                    />
-                    行横条，超出转卡片
-                  </label>
-                )}
-              </Section>
-
-              <Section title="无任务日期">
-                <RadioCards name="cr-empty-day" options={EMPTY_DAY_OPTIONS} value={emptyDayStyle} onChange={setEmptyDayStyle} />
-                <p className="mt-2 text-[11px] text-slate-400 leading-snug">今天始终强调显示，不受此项影响。</p>
-              </Section>
-
-              <Section title="延期阈值">
-                <label className="flex items-center gap-2 text-[13px] text-slate-600">
-                  改期达
+            <Section title="跨天任务展示">
+              <RadioCards name="cr-gantt-mode" options={GANTT_OPTIONS} value={ganttMode} onChange={setGanttMode} />
+              {ganttMode === "lane" && (
+                <label className="mt-2 flex items-center gap-2 text-[13px] text-slate-600">
+                  最多保留
                   <input
                     type="number"
                     min={1}
-                    value={threshold}
-                    onChange={(e) => setThreshold(Math.max(1, Number(e.target.value)))}
+                    max={6}
+                    value={ganttLanes}
+                    onChange={(e) => setGanttLanes(Number(e.target.value))}
                     className="w-14 rounded-lg border border-slate-200 px-2 py-1 text-center outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-100"
                   />
-                  次且未完成时高亮
+                  行横条，超出转卡片
                 </label>
-                <p className="mt-2 text-[11px] text-slate-400 leading-snug">超过计划完成日未完成也会高亮。</p>
-              </Section>
-            </div>
+              )}
+            </Section>
+
+            <Section title="无任务日期">
+              <RadioCards name="cr-empty-day" options={EMPTY_DAY_OPTIONS} value={emptyDayStyle} onChange={setEmptyDayStyle} />
+              <p className="mt-2 text-[11px] text-slate-400 leading-snug">今天始终强调显示，不受此项影响。</p>
+            </Section>
+
+            <Section title="延期阈值">
+              <label className="flex items-center gap-2 text-[13px] text-slate-600">
+                改期达
+                <input
+                  type="number"
+                  min={1}
+                  value={threshold}
+                  onChange={(e) => setThreshold(Math.max(1, Number(e.target.value)))}
+                  className="w-14 rounded-lg border border-slate-200 px-2 py-1 text-center outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-100"
+                />
+                次且未完成时高亮
+              </label>
+              <p className="mt-2 text-[11px] text-slate-400 leading-snug">超过计划完成日未完成也会高亮。</p>
+            </Section>
           </div>
         </div>
       )}
-    </>
+    </div>
   );
 }

@@ -66,10 +66,6 @@ export default function TopBar({
             ))}
           </select>
         )}
-        <span className="text-xs font-semibold text-brand-700 bg-brand-50 rounded-full px-2 py-0.5">
-          {isAdmin ? "管理员" : "用户"}
-        </span>
-        <span className="text-slate-600">{user?.nickname || user?.username}</span>
         <Settings
           threshold={threshold}
           setThreshold={setThreshold}
