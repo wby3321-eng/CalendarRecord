@@ -57,6 +57,12 @@ export default function TypeChips({ types, tasks, selectedTypes, setSelectedType
           filtering ? "bg-white border-slate-200 text-slate-600" : "bg-brand-500 border-brand-500 text-white"
         }`}
       >
+        <svg viewBox="0 0 16 16" fill="currentColor" aria-hidden className="w-3.5 h-3.5">
+          <rect x="1" y="1" width="6" height="6" rx="1.6" />
+          <rect x="9" y="1" width="6" height="6" rx="1.6" />
+          <rect x="1" y="9" width="6" height="6" rx="1.6" />
+          <rect x="9" y="9" width="6" height="6" rx="1.6" />
+        </svg>
         全部
         <span className={`text-[11px] font-semibold ${filtering ? "text-slate-400" : "text-white/85"}`}>
           {tasks.length}
