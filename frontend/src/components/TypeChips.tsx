@@ -1,47 +1,71 @@
 import type { Task, TaskType } from "../types";
-import { typeEmoji } from "../lib/logic";
+import { typeEmoji, UNTYPED_ID } from "../lib/logic";
 
 interface Props {
   types: TaskType[];
   tasks: Task[];
-  hiddenTypes: Set<number>;
-  setHiddenTypes: (s: Set<number>) => void;
+  selectedTypes: Set<number>;
+  setSelectedTypes: (s: Set<number>) => void;
   onManage: () => void;
 }
 
-export default function TypeChips({ types, tasks, hiddenTypes, setHiddenTypes, onManage }: Props) {
-  const countOf = (id: number) => tasks.filter((t) => t.type_id === id).length;
+const BASE =
+  "inline-flex items-center gap-1.5 rounded-full border-[1.5px] px-3 py-1 text-[13px] font-semibold select-none transition hover:shadow-card";
+
+export default function TypeChips({ types, tasks, selectedTypes, setSelectedTypes, onManage }: Props) {
+  const filtering = selectedTypes.size > 0;
+  const countOf = (id: number) =>
+    id === UNTYPED_ID
+      ? tasks.filter((t) => t.type_id == null).length
+      : tasks.filter((t) => t.type_id === id).length;
+  const untypedCount = countOf(UNTYPED_ID);
 
   const toggle = (id: number) => {
-    const next = new Set(hiddenTypes);
+    const next = new Set(selectedTypes);
     if (next.has(id)) next.delete(id);
     else next.add(id);
-    setHiddenTypes(next);
+    setSelectedTypes(next);
   };
+
+  // 未筛选：全部图例常态高亮；筛选中：选中的品牌高亮、其余弱化
+  const chipCls = (id: number) => {
+    if (selectedTypes.has(id)) return `${BASE} bg-brand-50 border-brand-500 text-brand-700`;
+    if (filtering) return `${BASE} opacity-45 bg-slate-100 border-slate-200 text-slate-500`;
+    return `${BASE} bg-white border-slate-200 text-slate-700`;
+  };
+
+  const chip = (id: number, color: string, icon: string, name: string) => (
+    <button
+      key={id}
+      onClick={() => toggle(id)}
+      title={selectedTypes.has(id) ? "取消该类型筛选" : "只看该类型（可多选叠加）"}
+      className={chipCls(id)}
+    >
+      <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: color }} />
+      <span className="leading-none">{icon}</span>
+      <span>{name}</span>
+      <span className="text-[11px] font-semibold text-slate-400">{countOf(id)}</span>
+    </button>
+  );
 
   return (
     <div className="flex flex-wrap items-center gap-2 px-4 sm:px-6 pt-2 pb-3.5">
-      {/* <span className="text-xs text-slate-400 mr-0.5">类型图例 · 点击切换显隐：</span> */}
-      {types.map((t) => {
-        const off = hiddenTypes.has(t.id);
-        return (
-          <button
-            key={t.id}
-            onClick={() => toggle(t.id)}
-            title={off ? "点击显示" : "点击隐藏"}
-            className={`inline-flex items-center gap-1.5 rounded-full border-[1.5px] px-3 py-1 text-[13px] font-semibold select-none transition hover:shadow-card ${
-              off
-                ? "opacity-45 bg-slate-100 border-slate-200 text-slate-500 line-through"
-                : "bg-white border-slate-200 text-slate-700"
-            }`}
-          >
-            <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: t.color }} />
-            <span className="leading-none">{typeEmoji(t.icon)}</span>
-            <span>{t.name}</span>
-            <span className="text-[11px] text-slate-400 font-semibold">{countOf(t.id)}</span>
-          </button>
-        );
-      })}
+      <button
+        onClick={() => filtering && setSelectedTypes(new Set())}
+        title="显示全部类型"
+        className={`${BASE} ${
+          filtering ? "bg-white border-slate-200 text-slate-600" : "bg-brand-500 border-brand-500 text-white"
+        }`}
+      >
+        全部
+        <span className={`text-[11px] font-semibold ${filtering ? "text-slate-400" : "text-white/85"}`}>
+          {tasks.length}
+        </span>
+      </button>
+
+      {types.map((t) => chip(t.id, t.color, typeEmoji(t.icon), t.name))}
+      {untypedCount > 0 && chip(UNTYPED_ID, "#94a3b8", "🏷️", "未分类")}
+
       <button
         onClick={onManage}
         className="ml-1.5 inline-flex items-center gap-1.5 rounded-full border-[1.5px] border-dashed border-slate-300 px-3 py-1 text-[13px] font-semibold text-brand-700 hover:bg-brand-50 transition"

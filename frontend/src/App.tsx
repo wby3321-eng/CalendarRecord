@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { useAuth } from "./store/auth";
 import { useTasks, useTypes, useUsers } from "./hooks/queries";
 import { buildDateRange, dayjs, FMT, today } from "./lib/date";
-import { parseSearch } from "./lib/logic";
+import { parseSearch, UNTYPED_ID } from "./lib/logic";
 import type { CardDisplayMode, EmptyDayStyle, GanttMode, Task, ViewMode } from "./types";
 import Login from "./components/Login";
 import TopBar from "./components/TopBar";
@@ -29,7 +29,7 @@ export default function App() {
   const [customStart, setCustomStart] = useState<string>(today());
   const [customEnd, setCustomEnd] = useState<string>(dayjs().add(14, "day").format(FMT));
   const [query, setQuery] = useState("");
-  const [hiddenTypes, setHiddenTypes] = useState<Set<number>>(new Set());
+  const [selectedTypes, setSelectedTypes] = useState<Set<number>>(new Set());
   const [viewOwner, setViewOwner] = useState<string>("");
   const [threshold, setThreshold] = useState<number>(
     Number(localStorage.getItem(THRESHOLD_KEY)) || 3
@@ -107,8 +107,11 @@ export default function App() {
   };
 
   const visibleTasks = useMemo(
-    () => tasks.filter((t) => t.type_id == null || !hiddenTypes.has(t.type_id)),
-    [tasks, hiddenTypes]
+    () =>
+      selectedTypes.size === 0
+        ? tasks
+        : tasks.filter((t) => selectedTypes.has(t.type_id ?? UNTYPED_ID)),
+    [tasks, selectedTypes]
   );
 
   // 当日报纸：与该日相交的任务（含跨天），按优先级降序排列作为默认版序
@@ -163,8 +166,8 @@ export default function App() {
       <TypeChips
         types={types}
         tasks={tasks}
-        hiddenTypes={hiddenTypes}
-        setHiddenTypes={setHiddenTypes}
+        selectedTypes={selectedTypes}
+        setSelectedTypes={setSelectedTypes}
         onManage={() => setShowTypeManager(true)}
       />
 

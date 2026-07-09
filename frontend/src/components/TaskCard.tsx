@@ -104,8 +104,19 @@ export function TaskCardBody({
         >
           {task.title}
         </span>
+      </div>
+
+      <div className="mt-1 flex flex-wrap items-center gap-1.5">
+        <span className={`text-[10px] font-bold px-1.5 rounded ${PRIORITY_PILL[task.priority]}`}>
+          {PRIORITY_LABEL[task.priority]}
+        </span>
+        {delayed && (
+          <span className="text-[10px] font-bold text-red-600 bg-red-50 rounded px-1.5 py-px">
+            ⏭️ +{task.reschedule_count > 0 ? ` ${task.reschedule_count}` : ""}
+          </span>
+        )}
         {ownerLabel && (
-          <span className="shrink-0 text-[10px] font-semibold text-white bg-slate-400 rounded px-1">{ownerLabel}</span>
+          <span className="text-[10px] font-semibold text-white bg-slate-400 rounded px-1">{ownerLabel}</span>
         )}
         {task.link && (
           <a
@@ -115,21 +126,12 @@ export function TaskCardBody({
             onPointerDown={(e) => e.stopPropagation()}
             onClick={(e) => e.stopPropagation()}
             title="打开链接"
-            className="shrink-0 text-brand-500 hover:text-brand-700"
+            className="text-brand-500 hover:text-brand-700"
           >
             🔗
           </a>
         )}
-        <span className={`shrink-0 text-[10px] font-bold px-1.5 rounded ${PRIORITY_PILL[task.priority]}`}>
-          {PRIORITY_LABEL[task.priority]}
-        </span>
       </div>
-
-      {delayed && (
-        <div className="mt-1 inline-block text-[10px] font-bold text-red-600 bg-red-50 rounded px-1.5 py-px">
-          ⏭️ +{task.reschedule_count > 0 ? ` ${task.reschedule_count}` : ""}
-        </div>
-      )}
 
       {preview && (
         <div

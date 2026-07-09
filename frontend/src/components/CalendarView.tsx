@@ -77,12 +77,12 @@ export default function CalendarView(p: Props) {
       {p.isLoading && <div className="text-slate-400 mb-2">加载中…</div>}
 
       {/* 周一为首的星期表头 */}
-      <div className="grid grid-cols-7 mb-2 rounded-card border border-slate-200 bg-slate-50 overflow-hidden">
+      <div className="grid grid-cols-7 mb-2 px-1">
         {WEEK_LABELS.map((w, i) => (
           <div
             key={w}
-            className={`text-center text-xs font-bold py-2 ${i > 0 ? "border-l border-slate-200" : ""} ${
-              i >= 5 ? "text-red-500" : "text-slate-500"
+            className={`text-center py-1.5 text-[11px] font-semibold tracking-widest ${
+              i >= 5 ? "text-red-400" : "text-slate-400"
             }`}
           >
             周{w}
@@ -359,23 +359,16 @@ function WeekRow(r: RowProps) {
           return (
             <div
               key={d}
-              onClick={compact ? () => r.onAddTask(d) : undefined}
-              title={compact ? "新增任务" : undefined}
-              className={`flex flex-col rounded-card border overflow-hidden transition ${
-                compact ? "min-h-[46px] cursor-pointer hover:bg-brand-50" : "min-h-[132px] sm:min-h-[148px]"
+              onClick={() => r.onOpenPaper(d)}
+              title="查看当日报纸"
+              className={`group/cell flex flex-col rounded-card border overflow-hidden cursor-pointer transition hover:border-brand-300 hover:shadow-sm ${
+                compact ? "min-h-[46px] hover:bg-brand-50" : "min-h-[132px] sm:min-h-[148px]"
               } ${bgBorder}`}
             >
               <div
                 className={`flex items-center justify-between px-2 py-1.5 ${compact ? "" : "border-b border-slate-100"}`}
               >
-                <div
-                  className="flex items-baseline gap-1 cursor-pointer rounded px-1 -mx-1 hover:bg-brand-100/60"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    r.onOpenPaper(d);
-                  }}
-                  title="查看当日报纸"
-                >
+                <div className="flex items-baseline gap-1">
                   <span className={dateCls}>{dnum}</span>
                   {today && (
                     <span className="text-[10px] font-bold text-white bg-brand-600 rounded px-1 leading-tight">
@@ -406,7 +399,8 @@ function WeekRow(r: RowProps) {
                     <div key={task.id} className="relative">
                       <div
                         onPointerDown={(e) => startDrag(e, task, "body")}
-                        onClick={() => {
+                        onClick={(e) => {
+                          e.stopPropagation();
                           if (!draggedRef.current) r.onOpenTask(task);
                           draggedRef.current = false;
                         }}
@@ -424,7 +418,7 @@ function WeekRow(r: RowProps) {
                               className="inline-block h-1.5 w-4 shrink-0 rounded-full"
                               style={{ backgroundColor: type?.color || "#94a3b8" }}
                             />
-                            甘特 {task.plan_start_date.slice(5)}→{task.plan_due_date.slice(5)}
+                            {task.plan_start_date.slice(5)}→{task.plan_due_date.slice(5)}
                           </div>
                         )}
                         <TaskCardBody task={task} type={type} threshold={r.threshold} ownerLabel={r.ownerMap?.[task.owner_id]} />
@@ -447,7 +441,10 @@ function WeekRow(r: RowProps) {
                 })}
                 {cards.length > MAX_CARDS && (
                   <button
-                    onClick={(e) => openPop(e, `${dnum} 日 · ${cards.length} 项`, cards)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      openPop(e, `${dnum} 日 · ${cards.length} 项`, cards);
+                    }}
                     className="rounded-md py-0.5 text-[11px] text-slate-500 hover:bg-slate-100"
                   >
                     +{cards.length - MAX_CARDS} 更多
@@ -456,7 +453,10 @@ function WeekRow(r: RowProps) {
               </div>
 
               <button
-                onClick={() => r.onAddTask(d)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  r.onAddTask(d);
+                }}
                 className="mx-1.5 mb-1.5 mt-0.5 border border-dashed border-slate-200 rounded-md py-1 text-[11px] text-slate-400 hover:border-brand-500 hover:text-brand-700 hover:bg-brand-50 transition"
               >
                 ＋ 新增任务

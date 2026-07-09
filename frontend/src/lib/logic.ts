@@ -4,6 +4,9 @@ import { dayjs } from "./date";
 export const DEFAULT_THRESHOLD = 3;
 export const STATUSES: Status[] = ["todo", "in-progress", "done"];
 
+/** 图例筛选中代表「未分类」(type_id 为空) 任务的哨兵 id。 */
+export const UNTYPED_ID = -1;
+
 export const STATUS_LABEL: Record<Status, string> = {
   todo: "待办",
   "in-progress": "进行中",
