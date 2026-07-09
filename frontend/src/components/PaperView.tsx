@@ -563,8 +563,8 @@ function PaperCard({
         placeholder="未命名任务"
         className={
           feature
-            ? `text-2xl font-bold leading-snug sm:text-[26px] ${done ? "text-slate-400 line-through" : "text-slate-900"}`
-            : `text-base font-bold leading-snug ${done ? "text-slate-400 line-through" : "text-slate-800"}`
+            ? `text-2xl font-bold leading-snug sm:text-[26px] ${done ? "text-slate-400" : "text-slate-900"}`
+            : `text-base font-bold leading-snug ${done ? "text-slate-400" : "text-slate-800"}`
         }
       />
 

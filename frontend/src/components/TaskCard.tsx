@@ -99,7 +99,7 @@ export function TaskCardBody({
         {icon && <span className="shrink-0 text-[13px] leading-none">{icon}</span>}
         <span
           className={`flex-1 min-w-0 truncate font-medium ${
-            done ? "line-through text-slate-400" : "text-slate-700"
+            done ? "text-slate-400" : "text-slate-700"
           }`}
         >
           {task.title}
