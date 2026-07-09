@@ -107,7 +107,7 @@ export default function Settings({
             : "border-slate-200 text-slate-600 hover:bg-slate-50"
         }`}
       >
-        ⚙️ 设置
+        ⚙️
       </button>
 
       {open && (

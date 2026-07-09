@@ -85,7 +85,7 @@ export default function Login() {
 
         {mode === "login" && (
           <div className="text-xs text-slate-400 mt-4 text-center">
-            默认管理员：admin / admin123
+            {/* 默认管理员：admin / admin123 */}
           </div>
         )}
       </div>
