@@ -177,43 +177,6 @@ export default function TaskDrawer({ task, defaultDate, types, allTags, onClose 
               <input value={title} onChange={(e) => setTitle(e.target.value)} className={inputCls} autoFocus />
             </Field>
 
-            <div className="grid grid-cols-2 gap-3">
-              <Field label="类型">
-                <select value={typeId ?? ""} onChange={(e) => setTypeId(e.target.value ? Number(e.target.value) : null)} className={inputCls}>
-                  <option value="">未分类</option>
-                  {types.map((t) => (
-                    <option key={t.id} value={t.id}>{t.name}</option>
-                  ))}
-                </select>
-              </Field>
-              <Field label="优先级">
-                <select value={priority} onChange={(e) => setPriority(e.target.value as Priority)} className={inputCls}>
-                  {(["high", "medium", "low"] as Priority[]).map((p) => (
-                    <option key={p} value={p}>{PRIORITY_LABEL[p]}</option>
-                  ))}
-                </select>
-              </Field>
-            </div>
-
-            <Field label="状态">
-              <div className="flex gap-2">
-                {STATUSES.map((s) => (
-                  <button
-                    key={s}
-                    onClick={() => setStatus(s)}
-                    className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl text-sm border transition ${
-                      status === s
-                        ? "bg-brand-50 border-brand-500 text-brand-700 font-medium"
-                        : "border-slate-200 text-slate-500 hover:bg-slate-50"
-                    }`}
-                  >
-                    <span className={`w-1.5 h-1.5 rounded-full ${STATUS_DOT[s]}`} />
-                    {STATUS_LABEL[s]}
-                  </button>
-                ))}
-              </div>
-            </Field>
-
             <Field label="标签">
               <div className="flex flex-wrap items-center gap-1.5 rounded-xl border border-slate-200 px-2 py-2 focus-within:border-brand-500 focus-within:ring-2 focus-within:ring-brand-100 transition">
                 {tags.map((t) => {
@@ -258,6 +221,43 @@ export default function TaskDrawer({ task, defaultDate, types, allTags, onClose 
                   ))}
                 </div>
               )}
+            </Field>
+
+            <div className="grid grid-cols-2 gap-3">
+              <Field label="类型">
+                <select value={typeId ?? ""} onChange={(e) => setTypeId(e.target.value ? Number(e.target.value) : null)} className={inputCls}>
+                  <option value="">未分类</option>
+                  {types.map((t) => (
+                    <option key={t.id} value={t.id}>{t.name}</option>
+                  ))}
+                </select>
+              </Field>
+              <Field label="优先级">
+                <select value={priority} onChange={(e) => setPriority(e.target.value as Priority)} className={inputCls}>
+                  {(["high", "medium", "low"] as Priority[]).map((p) => (
+                    <option key={p} value={p}>{PRIORITY_LABEL[p]}</option>
+                  ))}
+                </select>
+              </Field>
+            </div>
+
+            <Field label="状态">
+              <div className="flex gap-2">
+                {STATUSES.map((s) => (
+                  <button
+                    key={s}
+                    onClick={() => setStatus(s)}
+                    className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl text-sm border transition ${
+                      status === s
+                        ? "bg-brand-50 border-brand-500 text-brand-700 font-medium"
+                        : "border-slate-200 text-slate-500 hover:bg-slate-50"
+                    }`}
+                  >
+                    <span className={`w-1.5 h-1.5 rounded-full ${STATUS_DOT[s]}`} />
+                    {STATUS_LABEL[s]}
+                  </button>
+                ))}
+              </div>
             </Field>
           </Section>
 

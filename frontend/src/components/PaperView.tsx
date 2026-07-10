@@ -3,7 +3,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import type { Attachment, Priority, Status, Task, TaskType } from "../types";
 import { dayjs, WEEK_LABELS } from "../lib/date";
 import { getDayMark } from "../lib/holidays";
-import { cycleStatus, getTaskTags, isDelayed, PRIORITY_LABEL, STATUS_LABEL, tagColor, typeEmoji } from "../lib/logic";
+import { cycleStatus, getTaskTags, isDelayed, normalizeTags, PRIORITY_LABEL, STATUS_LABEL, tagColor, typeEmoji } from "../lib/logic";
 import { useTaskMutations } from "../hooks/queries";
 import { api } from "../api/client";
 
@@ -620,22 +620,10 @@ function PaperCard({
         )}
       </div>
 
-      {tags.length > 0 && (
-        <div className="mt-2 flex flex-wrap items-center gap-1.5">
-          {tags.map((t) => {
-            const c = tagColor(t);
-            return (
-              <span
-                key={t}
-                className={`${PILL} px-1.5`}
-                style={{ backgroundColor: c.bg, color: c.fg }}
-              >
-                #{t}
-              </span>
-            );
-          })}
-        </div>
-      )}
+      <TagEditor
+        tags={tags}
+        onSave={(next) => onSaveField({ ext_fields: { ...(task.ext_fields || {}), tags: next } })}
+      />
     </article>
   );
 }
@@ -763,6 +751,120 @@ function InlineText({
       }`}
     >
       {empty ? placeholder : `${prefix || ""}${value}`}
+    </div>
+  );
+}
+
+/** 标签就地编辑：默认展示彩色 chip + 「＋ 标签」，点击展开输入框（回车/逗号加、✕删），点外部保存。 */
+function TagEditor({ tags, onSave }: { tags: string[]; onSave: (next: string[]) => void }) {
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState<string[]>(tags);
+  const [input, setInput] = useState("");
+  const ref = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (!editing) setDraft(tags);
+  }, [tags, editing]);
+
+  useEffect(() => {
+    if (editing) inputRef.current?.focus();
+  }, [editing]);
+
+  const add = (raw: string[]) => {
+    setDraft((prev) => normalizeTags([...prev, ...raw]));
+    setInput("");
+  };
+  const removeTag = (t: string) => setDraft((prev) => prev.filter((x) => x !== t));
+
+  const commit = useCallback(() => {
+    const next = normalizeTags([...draft, ...input.split(/[,，]/).map((s) => s.trim())]);
+    setInput("");
+    setEditing(false);
+    const changed = next.length !== tags.length || next.some((t, i) => t !== tags[i]);
+    if (changed) onSave(next);
+    else setDraft(tags);
+  }, [draft, input, tags, onSave]);
+
+  useEffect(() => {
+    if (!editing) return;
+    const h = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) commit();
+    };
+    document.addEventListener("mousedown", h);
+    return () => document.removeEventListener("mousedown", h);
+  }, [editing, commit]);
+
+  const onKey = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    e.stopPropagation();
+    if (e.key === "Enter" || e.key === "," || e.key === "，") {
+      e.preventDefault();
+      const parts = input.split(/[,，]/).map((s) => s.trim()).filter(Boolean);
+      if (parts.length) add(parts);
+      else setInput("");
+    } else if (e.key === "Backspace" && !input && draft.length) {
+      setDraft((prev) => prev.slice(0, -1));
+    } else if (e.key === "Escape") {
+      e.preventDefault();
+      setInput("");
+      setDraft(tags);
+      setEditing(false);
+    }
+  };
+
+  if (editing) {
+    return (
+      <div ref={ref} onClick={(e) => e.stopPropagation()} className="mt-2">
+        <div className="flex flex-wrap items-center gap-1.5 rounded-lg border border-brand-300 bg-white px-1.5 py-1.5 ring-2 ring-brand-100">
+          {draft.map((t) => {
+            const c = tagColor(t);
+            return (
+              <span key={t} className={`${PILL} px-1.5`} style={{ backgroundColor: c.bg, color: c.fg }}>
+                #{t}
+                <button
+                  type="button"
+                  onClick={() => removeTag(t)}
+                  className="leading-none opacity-60 hover:opacity-100"
+                >
+                  ✕
+                </button>
+              </span>
+            );
+          })}
+          <input
+            ref={inputRef}
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={onKey}
+            placeholder={draft.length ? "" : "回车 / 逗号添加"}
+            className="min-w-[70px] flex-1 bg-transparent py-0.5 text-[12px] outline-none"
+          />
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div
+      onClick={(e) => {
+        e.stopPropagation();
+        setDraft(tags);
+        setEditing(true);
+      }}
+      title="点击编辑标签"
+      className="mt-2 flex flex-wrap items-center gap-1.5 cursor-pointer"
+    >
+      {tags.map((t) => {
+        const c = tagColor(t);
+        return (
+          <span key={t} className={`${PILL} px-1.5`} style={{ backgroundColor: c.bg, color: c.fg }}>
+            #{t}
+          </span>
+        );
+      })}
+      <span className="inline-flex items-center gap-1 rounded-md border border-dashed border-slate-300 px-1.5 py-0.5 text-[11px] text-slate-400 opacity-60 transition group-hover:opacity-100 hover:border-brand-300 hover:text-brand-500">
+        ＋ 标签
+      </span>
     </div>
   );
 }

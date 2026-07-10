@@ -66,6 +66,24 @@ function RailAvatar({
   );
 }
 
+const EyeOffIcon = ({ className }: { className?: string }) => (
+  <svg
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    className={className}
+    aria-hidden
+  >
+    <path d="M9.88 9.88a3 3 0 1 0 4.24 4.24" />
+    <path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68" />
+    <path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61" />
+    <line x1="2" x2="22" y1="2" y2="22" />
+  </svg>
+);
+
 export default function UserRail({ users, viewOwner, setViewOwner, currentUserId }: Props) {
   const allActive = viewOwner === "";
   const [collapsed, setCollapsed] = useState(() => {
@@ -87,13 +105,25 @@ export default function UserRail({ users, viewOwner, setViewOwner, currentUserId
       return next;
     });
 
-  // 收起态：仅保留左边缘细把手，点击展开
+  // 收起态：仅保留左边缘细把手，闭眼图标点击展开
   if (collapsed) {
     return (
       <button
         onClick={toggle}
-        title="展开用户切换"
+        title="展开用户栏"
         className="group flex h-full w-6 shrink-0 flex-col items-center justify-center border-r border-slate-200 bg-slate-50 transition hover:bg-slate-100"
+      >
+        <EyeOffIcon className="h-4 w-4 text-slate-300 transition group-hover:text-slate-500" />
+      </button>
+    );
+  }
+
+  return (
+    <aside className="flex h-full w-16 shrink-0 flex-col items-center gap-1.5 border-r border-slate-200 bg-slate-50 py-3">
+      <button
+        onClick={toggle}
+        title="折叠用户栏"
+        className="mb-0.5 flex h-7 w-7 items-center justify-center rounded-lg text-slate-300 transition hover:bg-slate-200 hover:text-slate-600"
       >
         <svg
           viewBox="0 0 24 24"
@@ -102,30 +132,13 @@ export default function UserRail({ users, viewOwner, setViewOwner, currentUserId
           strokeWidth="2"
           strokeLinecap="round"
           strokeLinejoin="round"
-          className="h-4 w-4 text-slate-300 transition group-hover:text-slate-500"
+          className="h-4 w-4"
           aria-hidden
         >
-          <path d="m9 18 6-6-6-6" />
+          <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" />
+          <circle cx="12" cy="12" r="3" />
         </svg>
       </button>
-    );
-  }
-
-  return (
-    <aside className="flex h-full w-16 shrink-0 flex-col items-center gap-1.5 border-r border-slate-200 bg-slate-50 py-3">
-      <svg
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        className="mb-0.5 h-4 w-4 text-slate-300"
-        aria-hidden
-      >
-        <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" />
-        <circle cx="12" cy="12" r="3" />
-      </svg>
 
       <RailAvatar
         active={allActive}
@@ -170,26 +183,6 @@ export default function UserRail({ users, viewOwner, setViewOwner, currentUserId
           );
         })}
       </div>
-
-      {/* 收起按钮 */}
-      <button
-        onClick={toggle}
-        title="收起用户栏"
-        className="mt-auto flex h-7 w-7 items-center justify-center rounded-lg text-slate-400 transition hover:bg-slate-200 hover:text-slate-600"
-      >
-        <svg
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          className="h-4 w-4"
-          aria-hidden
-        >
-          <path d="m15 18-6-6 6-6" />
-        </svg>
-      </button>
     </aside>
   );
 }
