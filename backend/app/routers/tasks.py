@@ -63,9 +63,9 @@ def list_tasks(
         start, end = build_date_range(view, anchor or date.today(), custom_start, custom_end)
         stmt = stmt.where(Task.plan_start_date <= end, Task.plan_due_date >= start)
 
-    # 搜索：status:xxx type:xxx + 模糊文本
-    if q:
-        parsed = parse_search(q)
+    # 搜索：status:xxx type:xxx tag:xxx + 模糊文本
+    parsed = parse_search(q) if q else None
+    if parsed:
         if parsed["statuses"]:
             stmt = stmt.where(Task.status.in_(parsed["statuses"]))
         if parsed["types"]:
@@ -78,7 +78,22 @@ def list_tasks(
             )
 
     stmt = stmt.order_by(Task.plan_start_date, Task.id)
-    return list(db.scalars(stmt))
+    rows = list(db.scalars(stmt))
+
+    # tag 存于 ext_fields["tags"]（JSON 数组），在 Python 侧做不区分大小写的子串匹配（任一命中即纳入）
+    if parsed and parsed["tags"]:
+        wanted = [t.lower() for t in parsed["tags"]]
+        rows = [r for r in rows if _task_has_tag(r, wanted)]
+
+    return rows
+
+
+def _task_has_tag(task: Task, wanted: list[str]) -> bool:
+    raw = (task.ext_fields or {}).get("tags") or []
+    if not isinstance(raw, list):
+        return False
+    have = [str(t).lower() for t in raw]
+    return any(any(w in h for h in have) for w in wanted)
 
 
 @router.post("", response_model=TaskOut)

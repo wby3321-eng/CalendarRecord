@@ -43,9 +43,15 @@ def test_parse_search_multi_status_union():
     assert r["statuses"] == ["done", "todo"]
 
 
+def test_parse_search_tags():
+    r = parse_search("tag:公司A tag:重点 复盘")
+    assert r["tags"] == ["公司A", "重点"]
+    assert r["text"] == "复盘"
+
+
 def test_parse_search_empty():
     r = parse_search("")
-    assert r == {"statuses": [], "types": [], "text": ""}
+    assert r == {"statuses": [], "types": [], "tags": [], "text": ""}
 
 
 # UT-03 拖拽主体

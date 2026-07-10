@@ -2,10 +2,11 @@ import { useMemo, useState } from "react";
 import { useAuth } from "./store/auth";
 import { useTasks, useTypes, useUsers } from "./hooks/queries";
 import { buildDateRange, dayjs, FMT, today } from "./lib/date";
-import { parseSearch, UNTYPED_ID } from "./lib/logic";
+import { getTaskTags, parseSearch, UNTYPED_ID } from "./lib/logic";
 import type { CardDisplayMode, EmptyDayStyle, GanttMode, Task, ViewMode } from "./types";
 import Login from "./components/Login";
 import TopBar from "./components/TopBar";
+import UserRail from "./components/UserRail";
 import Toolbar from "./components/Toolbar";
 import TypeChips from "./components/TypeChips";
 import CalendarView from "./components/CalendarView";
@@ -14,6 +15,7 @@ import TaskDrawer from "./components/TaskDrawer";
 import TypeManager from "./components/TypeManager";
 import AIPanel from "./components/AIPanel";
 import PaperView from "./components/PaperView";
+import TagCloud from "./components/TagCloud";
 
 const THRESHOLD_KEY = "cr_delay_threshold";
 const DISPLAY_MODE_KEY = "cr_card_display_mode";
@@ -51,6 +53,7 @@ export default function App() {
   const [creatingDate, setCreatingDate] = useState<string | null>(null);
   const [showTypeManager, setShowTypeManager] = useState(false);
   const [showAI, setShowAI] = useState(false);
+  const [showTagCloud, setShowTagCloud] = useState(false);
   const [paperDate, setPaperDate] = useState<string | null>(null);
 
   const searching = query.trim().length > 0;
@@ -114,6 +117,12 @@ export default function App() {
     [tasks, selectedTypes]
   );
 
+  const allTags = useMemo(() => {
+    const s = new Set<string>();
+    tasks.forEach((t) => getTaskTags(t).forEach((tag) => s.add(tag)));
+    return [...s].sort((a, b) => a.localeCompare(b, "zh"));
+  }, [tasks]);
+
   // 当日报纸：与该日相交的任务（含跨天），按优先级降序排列作为默认版序
   const paperTasks = useMemo(() => {
     if (!paperDate) return [];
@@ -133,76 +142,85 @@ export default function App() {
   if (!user) return <Login />;
 
   return (
-    <div className="min-h-full flex flex-col">
-      <TopBar
-        users={users}
-        viewOwner={viewOwner}
-        setViewOwner={setViewOwner}
-        threshold={threshold}
-        setThreshold={updateThreshold}
-        displayMode={displayMode}
-        setDisplayMode={updateDisplayMode}
-        ganttMode={ganttMode}
-        setGanttMode={updateGanttMode}
-        ganttLanes={ganttLanes}
-        setGanttLanes={updateGanttLanes}
-        emptyDayStyle={emptyDayStyle}
-        setEmptyDayStyle={updateEmptyDayStyle}
-      />
+    <div className="flex h-full">
+      {isAdmin && users.length > 1 && (
+        <UserRail
+          users={users}
+          viewOwner={viewOwner}
+          setViewOwner={setViewOwner}
+          currentUserId={user.id}
+        />
+      )}
 
-      <Toolbar
-        view={view}
-        setView={setView}
-        anchor={anchor}
-        setAnchor={setAnchor}
-        customStart={customStart}
-        setCustomStart={setCustomStart}
-        customEnd={customEnd}
-        setCustomEnd={setCustomEnd}
-        query={query}
-        setQuery={setQuery}
-      />
+      <div className="flex h-full min-w-0 flex-1 flex-col">
+        <TopBar
+          threshold={threshold}
+          setThreshold={updateThreshold}
+          displayMode={displayMode}
+          setDisplayMode={updateDisplayMode}
+          ganttMode={ganttMode}
+          setGanttMode={updateGanttMode}
+          ganttLanes={ganttLanes}
+          setGanttLanes={updateGanttLanes}
+          emptyDayStyle={emptyDayStyle}
+          setEmptyDayStyle={updateEmptyDayStyle}
+        />
 
-      <TypeChips
-        types={types}
-        tasks={tasks}
-        selectedTypes={selectedTypes}
-        setSelectedTypes={setSelectedTypes}
-        onManage={() => setShowTypeManager(true)}
-      />
+        <Toolbar
+          view={view}
+          setView={setView}
+          anchor={anchor}
+          setAnchor={setAnchor}
+          customStart={customStart}
+          setCustomStart={setCustomStart}
+          customEnd={customEnd}
+          setCustomEnd={setCustomEnd}
+          query={query}
+          setQuery={setQuery}
+        />
 
-      <main className="flex-1 overflow-auto p-3 sm:p-4">
-        {searching ? (
-          <SearchResults
-            tasks={visibleTasks}
-            types={types}
-            threshold={threshold}
-            query={query}
-            isLoading={isLoading}
-            onOpen={setEditingTask}
-            ownerMap={cardOwnerMap}
-            mode={displayMode}
-          />
-        ) : (
-          <CalendarView
-            view={view}
-            anchor={anchor}
-            range={range}
-            tasks={visibleTasks}
-            types={types}
-            threshold={threshold}
-            isLoading={isLoading}
-            onOpenTask={setEditingTask}
-            onAddTask={(d) => setCreatingDate(d)}
-            onOpenPaper={setPaperDate}
-            ownerMap={cardOwnerMap}
-            mode={displayMode}
-            ganttMode={ganttMode}
-            ganttLanes={ganttLanes}
-            emptyDayStyle={emptyDayStyle}
-          />
-        )}
-      </main>
+        <TypeChips
+          types={types}
+          tasks={tasks}
+          selectedTypes={selectedTypes}
+          setSelectedTypes={setSelectedTypes}
+          onManage={() => setShowTypeManager(true)}
+          onOpenTagCloud={() => setShowTagCloud(true)}
+        />
+
+        <main className="flex-1 overflow-auto p-3 sm:p-4">
+          {searching ? (
+            <SearchResults
+              tasks={visibleTasks}
+              types={types}
+              threshold={threshold}
+              query={query}
+              isLoading={isLoading}
+              onOpen={setEditingTask}
+              ownerMap={cardOwnerMap}
+              mode={displayMode}
+            />
+          ) : (
+            <CalendarView
+              view={view}
+              anchor={anchor}
+              range={range}
+              tasks={visibleTasks}
+              types={types}
+              threshold={threshold}
+              isLoading={isLoading}
+              onOpenTask={setEditingTask}
+              onAddTask={(d) => setCreatingDate(d)}
+              onOpenPaper={setPaperDate}
+              ownerMap={cardOwnerMap}
+              mode={displayMode}
+              ganttMode={ganttMode}
+              ganttLanes={ganttLanes}
+              emptyDayStyle={emptyDayStyle}
+            />
+          )}
+        </main>
+      </div>
 
       {paperDate && (
         <PaperView
@@ -222,6 +240,7 @@ export default function App() {
           task={editingTask}
           defaultDate={creatingDate}
           types={types}
+          allTags={allTags}
           onClose={() => {
             setEditingTask(null);
             setCreatingDate(null);
@@ -231,6 +250,17 @@ export default function App() {
 
       {showTypeManager && (
         <TypeManager types={types} onClose={() => setShowTypeManager(false)} />
+      )}
+
+      {showTagCloud && (
+        <TagCloud
+          ownerId={isAdmin && viewOwner ? viewOwner : undefined}
+          onPick={(tag) => {
+            setQuery(`tag:${tag}`);
+            setShowTagCloud(false);
+          }}
+          onClose={() => setShowTagCloud(false)}
+        />
       )}
 
       {showAI && (
@@ -276,6 +306,7 @@ function SearchResults({
         搜索结果 {tasks.length} 条
         {parsed.statuses.length > 0 && ` · 状态:${parsed.statuses.join("/")}`}
         {parsed.types.length > 0 && ` · 类型:${parsed.types.join("/")}`}
+        {parsed.tags.length > 0 && ` · 标签:${parsed.tags.join("/")}`}
         {parsed.text && ` · 关键词:"${parsed.text}"`}
       </div>
       {isLoading ? (

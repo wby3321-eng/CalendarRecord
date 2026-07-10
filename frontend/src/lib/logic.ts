@@ -59,19 +59,63 @@ export function cycleStatus(current: Status, direction: "forward" | "backward" =
   return STATUSES[next];
 }
 
-/** 解析类 GitHub 搜索语法：status:done type:plan 关键词。 */
+/** 解析类 GitHub 搜索语法：status:done type:plan tag:公司 关键词。 */
 export function parseSearch(query: string): {
   statuses: string[];
   types: string[];
+  tags: string[];
   text: string;
 } {
   const statuses: string[] = [];
   const types: string[] = [];
+  const tags: string[] = [];
   const textParts: string[] = [];
   for (const token of (query || "").split(/\s+/).filter(Boolean)) {
     if (token.startsWith("status:") && token.length > 7) statuses.push(token.slice(7));
     else if (token.startsWith("type:") && token.length > 5) types.push(token.slice(5));
+    else if (token.startsWith("tag:") && token.length > 4) tags.push(token.slice(4));
     else textParts.push(token);
   }
-  return { statuses, types, text: textParts.join(" ").trim() };
+  return { statuses, types, tags, text: textParts.join(" ").trim() };
+}
+
+/** 从任务的扩展字段读取标签数组（容错非数组/空值）。 */
+export function getTaskTags(task: Task): string[] {
+  const raw = (task.ext_fields || {})["tags"];
+  if (!Array.isArray(raw)) return [];
+  return raw.map((t) => String(t).trim()).filter(Boolean);
+}
+
+/** 归一化标签录入：trim、去空、去重（不区分大小写保留首次原样）、单标签≤16、上限 10。 */
+export function normalizeTags(tags: string[]): string[] {
+  const out: string[] = [];
+  const seen = new Set<string>();
+  for (const t of tags) {
+    const v = (t || "").trim().slice(0, 16);
+    if (!v) continue;
+    const key = v.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push(v);
+    if (out.length >= 10) break;
+  }
+  return out;
+}
+
+const TAG_PALETTE = [
+  { bg: "#eef2ff", fg: "#4f46e5" },
+  { bg: "#ecfeff", fg: "#0e7490" },
+  { bg: "#ecfdf5", fg: "#047857" },
+  { bg: "#fffbeb", fg: "#b45309" },
+  { bg: "#fef2f2", fg: "#b91c1c" },
+  { bg: "#fdf2f8", fg: "#be185d" },
+  { bg: "#f5f3ff", fg: "#6d28d9" },
+  { bg: "#f0fdfa", fg: "#0f766e" },
+];
+
+/** 由标签文本派生稳定配色（同名标签处处同色）。 */
+export function tagColor(tag: string): { bg: string; fg: string } {
+  let h = 0;
+  for (let i = 0; i < tag.length; i++) h = (h * 31 + tag.charCodeAt(i)) >>> 0;
+  return TAG_PALETTE[h % TAG_PALETTE.length];
 }

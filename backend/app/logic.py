@@ -15,13 +15,14 @@ def is_delayed(status: str, reschedule_count: int, plan_due_date: date, today: d
 
 
 def parse_search(query: str) -> dict:
-    """解析类 GitHub 搜索语法：status:done type:plan 关键词。
+    """解析类 GitHub 搜索语法：status:done type:plan tag:公司 关键词。
 
     多个同名 token 取并集；剩余文本作为模糊匹配项。
-    返回 {"statuses": [...], "types": [...], "text": "..."}。
+    返回 {"statuses": [...], "types": [...], "tags": [...], "text": "..."}。
     """
     statuses: list[str] = []
     types: list[str] = []
+    tags: list[str] = []
     text_parts: list[str] = []
 
     for token in (query or "").split():
@@ -29,12 +30,15 @@ def parse_search(query: str) -> dict:
             statuses.append(token[7:])
         elif token.startswith("type:") and len(token) > 5:
             types.append(token[5:])
+        elif token.startswith("tag:") and len(token) > 4:
+            tags.append(token[4:])
         else:
             text_parts.append(token)
 
     return {
         "statuses": statuses,
         "types": types,
+        "tags": tags,
         "text": " ".join(text_parts).strip(),
     }
 

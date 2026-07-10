@@ -1,18 +1,19 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { Attachment, Priority, Status, Task, TaskType } from "../types";
 import { useTaskMutations } from "../hooks/queries";
 import { api } from "../api/client";
-import { PRIORITY_LABEL, STATUS_LABEL, STATUSES } from "../lib/logic";
+import { getTaskTags, normalizeTags, PRIORITY_LABEL, STATUS_LABEL, STATUSES, tagColor } from "../lib/logic";
 import { today } from "../lib/date";
 
 interface Props {
   task: Task | null;
   defaultDate: string | null;
   types: TaskType[];
+  allTags?: string[];
   onClose: () => void;
 }
 
-export default function TaskDrawer({ task, defaultDate, types, onClose }: Props) {
+export default function TaskDrawer({ task, defaultDate, types, allTags, onClose }: Props) {
   const { create, update, remove, resetReschedule } = useTaskMutations();
   const isEdit = !!task;
 
@@ -25,12 +26,41 @@ export default function TaskDrawer({ task, defaultDate, types, onClose }: Props)
   const [startDate, setStartDate] = useState(task?.plan_start_date || defaultDate || today());
   const [dueDate, setDueDate] = useState(task?.plan_due_date || defaultDate || today());
   const [ext, setExt] = useState<Record<string, unknown>>(task?.ext_fields || {});
+  const [tags, setTags] = useState<string[]>(task ? getTaskTags(task) : []);
+  const [tagInput, setTagInput] = useState("");
   const [attachments, setAttachments] = useState<Attachment[]>(task?.attachments || []);
   const [rescheduleCount, setRescheduleCount] = useState(task?.reschedule_count ?? 0);
   const [err, setErr] = useState("");
   const [busy, setBusy] = useState(false);
 
   const selectedType = types.find((t) => t.id === typeId);
+
+  const addTags = (raw: string[]) => {
+    setTags((prev) => normalizeTags([...prev, ...raw]));
+    setTagInput("");
+  };
+  const commitTagInput = () => {
+    const parts = tagInput.split(/[,，]/).map((s) => s.trim()).filter(Boolean);
+    if (parts.length) addTags(parts);
+    else setTagInput("");
+  };
+  const onTagKey = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter" || e.key === "," || e.key === "，") {
+      e.preventDefault();
+      commitTagInput();
+    } else if (e.key === "Backspace" && !tagInput && tags.length) {
+      setTags((prev) => prev.slice(0, -1));
+    }
+  };
+  const removeTag = (t: string) => setTags((prev) => prev.filter((x) => x !== t));
+
+  const suggestions = useMemo(() => {
+    const lower = tagInput.trim().toLowerCase();
+    const chosen = new Set(tags.map((t) => t.toLowerCase()));
+    return (allTags || [])
+      .filter((t) => !chosen.has(t.toLowerCase()) && (!lower || t.toLowerCase().includes(lower)))
+      .slice(0, 8);
+  }, [allTags, tags, tagInput]);
 
   useEffect(() => {
     const onEsc = (e: KeyboardEvent) => e.key === "Escape" && onClose();
@@ -43,6 +73,7 @@ export default function TaskDrawer({ task, defaultDate, types, onClose }: Props)
     if (!title.trim()) return setErr("任务名称必填");
     if (dueDate < startDate) return setErr("计划完成日不能早于开始日");
     setBusy(true);
+    const cleanTags = normalizeTags([...tags, ...tagInput.split(/[,，]/).map((s) => s.trim())]);
     const payload: Partial<Task> = {
       title,
       type_id: typeId,
@@ -52,7 +83,7 @@ export default function TaskDrawer({ task, defaultDate, types, onClose }: Props)
       priority,
       plan_start_date: startDate,
       plan_due_date: dueDate,
-      ext_fields: ext,
+      ext_fields: { ...ext, tags: cleanTags },
     };
     try {
       if (isEdit) await update.mutateAsync({ id: task!.id, data: payload });
@@ -181,6 +212,52 @@ export default function TaskDrawer({ task, defaultDate, types, onClose }: Props)
                   </button>
                 ))}
               </div>
+            </Field>
+
+            <Field label="标签">
+              <div className="flex flex-wrap items-center gap-1.5 rounded-xl border border-slate-200 px-2 py-2 focus-within:border-brand-500 focus-within:ring-2 focus-within:ring-brand-100 transition">
+                {tags.map((t) => {
+                  const c = tagColor(t);
+                  return (
+                    <span
+                      key={t}
+                      className="inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[12px] font-semibold"
+                      style={{ backgroundColor: c.bg, color: c.fg }}
+                    >
+                      #{t}
+                      <button
+                        type="button"
+                        onClick={() => removeTag(t)}
+                        className="leading-none opacity-60 hover:opacity-100"
+                      >
+                        ✕
+                      </button>
+                    </span>
+                  );
+                })}
+                <input
+                  value={tagInput}
+                  onChange={(e) => setTagInput(e.target.value)}
+                  onKeyDown={onTagKey}
+                  onBlur={commitTagInput}
+                  placeholder={tags.length ? "" : "回车 / 逗号添加，如 公司A、重点"}
+                  className="min-w-[90px] flex-1 bg-transparent py-0.5 text-sm outline-none"
+                />
+              </div>
+              {suggestions.length > 0 && (
+                <div className="mt-1.5 flex flex-wrap gap-1">
+                  {suggestions.map((s) => (
+                    <button
+                      key={s}
+                      type="button"
+                      onClick={() => addTags([s])}
+                      className="rounded-md bg-slate-100 px-2 py-0.5 text-[11px] text-slate-500 transition hover:bg-slate-200"
+                    >
+                      ＋ {s}
+                    </button>
+                  ))}
+                </div>
+              )}
             </Field>
           </Section>
 

@@ -1,7 +1,7 @@
 import { useState, type CSSProperties } from "react";
 import type { CardDisplayMode, Priority, Task, TaskType } from "../types";
 import { useTaskMutations } from "../hooks/queries";
-import { cycleStatus, isDelayed, PRIORITY_LABEL, truncateConclusion, typeEmoji } from "../lib/logic";
+import { cycleStatus, getTaskTags, isDelayed, PRIORITY_LABEL, tagColor, truncateConclusion, typeEmoji } from "../lib/logic";
 
 const PRIORITY_PILL: Record<Priority, string> = {
   high: "bg-red-100 text-red-700",
@@ -86,6 +86,7 @@ export function TaskCardBody({
   const preview = truncateConclusion(task.conclusion, 20);
   const truncated = task.conclusion.length > 20;
   const icon = typeIcon(type);
+  const tags = getTaskTags(task);
 
   return (
     <>
@@ -132,6 +133,24 @@ export function TaskCardBody({
           </a>
         )}
       </div>
+
+      {tags.length > 0 && (
+        <div className="mt-1 flex flex-wrap items-center gap-1">
+          {tags.map((t) => {
+            const c = tagColor(t);
+            return (
+              <span
+                key={t}
+                className="max-w-full truncate rounded px-1 text-[10px] font-semibold leading-tight"
+                style={{ backgroundColor: c.bg, color: c.fg }}
+                title={`#${t}`}
+              >
+                #{t}
+              </span>
+            );
+          })}
+        </div>
+      )}
 
       {preview && (
         <div

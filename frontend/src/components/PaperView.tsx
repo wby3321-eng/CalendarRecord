@@ -3,7 +3,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import type { Attachment, Priority, Status, Task, TaskType } from "../types";
 import { dayjs, WEEK_LABELS } from "../lib/date";
 import { getDayMark } from "../lib/holidays";
-import { cycleStatus, isDelayed, PRIORITY_LABEL, STATUS_LABEL, typeEmoji } from "../lib/logic";
+import { cycleStatus, getTaskTags, isDelayed, PRIORITY_LABEL, STATUS_LABEL, tagColor, typeEmoji } from "../lib/logic";
 import { useTaskMutations } from "../hooks/queries";
 import { api } from "../api/client";
 
@@ -463,6 +463,7 @@ function PaperCard({
   const done = task.status === "done";
   const imgs = (task.attachments || []).filter((a) => a.kind === "image");
   const delayed = isDelayed(task, threshold);
+  const tags = getTaskTags(task);
 
   const handlePaste = (e: React.ClipboardEvent) => {
     const items = e.clipboardData?.items;
@@ -618,6 +619,23 @@ function PaperCard({
           </a>
         )}
       </div>
+
+      {tags.length > 0 && (
+        <div className="mt-2 flex flex-wrap items-center gap-1.5">
+          {tags.map((t) => {
+            const c = tagColor(t);
+            return (
+              <span
+                key={t}
+                className={`${PILL} px-1.5`}
+                style={{ backgroundColor: c.bg, color: c.fg }}
+              >
+                #{t}
+              </span>
+            );
+          })}
+        </div>
+      )}
     </article>
   );
 }

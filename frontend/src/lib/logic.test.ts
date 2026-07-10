@@ -98,8 +98,14 @@ describe("parseSearch", () => {
     expect(r.text).toBe("季度总结");
   });
 
+  it("解析 tag token", () => {
+    const r = parseSearch("tag:公司A tag:重点 复盘");
+    expect(r.tags).toEqual(["公司A", "重点"]);
+    expect(r.text).toBe("复盘");
+  });
+
   it("空查询返回空结构", () => {
     const r = parseSearch("");
-    expect(r).toEqual({ statuses: [], types: [], text: "" });
+    expect(r).toEqual({ statuses: [], types: [], tags: [], text: "" });
   });
 });

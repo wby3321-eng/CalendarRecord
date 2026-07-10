@@ -1,11 +1,8 @@
 import { useAuth } from "../store/auth";
-import type { CardDisplayMode, EmptyDayStyle, GanttMode, User } from "../types";
+import type { CardDisplayMode, EmptyDayStyle, GanttMode } from "../types";
 import Settings from "./Settings";
 
 interface Props {
-  users?: User[];
-  viewOwner?: string;
-  setViewOwner?: (v: string) => void;
   threshold: number;
   setThreshold: (n: number) => void;
   displayMode: CardDisplayMode;
@@ -19,9 +16,6 @@ interface Props {
 }
 
 export default function TopBar({
-  users = [],
-  viewOwner = "",
-  setViewOwner,
   threshold,
   setThreshold,
   displayMode,
@@ -33,8 +27,7 @@ export default function TopBar({
   emptyDayStyle,
   setEmptyDayStyle,
 }: Props) {
-  const { user, logout } = useAuth();
-  const isAdmin = user?.role === "admin";
+  const { logout } = useAuth();
 
   return (
     <header className="sticky top-0 z-30 flex items-center justify-between gap-4 bg-white border-b border-slate-200 px-4 sm:px-6 py-3">
@@ -51,21 +44,6 @@ export default function TopBar({
       </div>
 
       <div className="flex items-center gap-3 text-[13px] text-slate-500">
-        {isAdmin && setViewOwner && (
-          <select
-            value={viewOwner}
-            onChange={(e) => setViewOwner(e.target.value)}
-            title="切换查看的用户"
-            className="border border-slate-200 rounded-lg px-2.5 py-1.5 text-slate-600 bg-white outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-100"
-          >
-            <option value="">全部用户（聚合）</option>
-            {users.map((u) => (
-              <option key={u.id} value={String(u.id)}>
-                {u.nickname || u.username}
-              </option>
-            ))}
-          </select>
-        )}
         <Settings
           threshold={threshold}
           setThreshold={setThreshold}

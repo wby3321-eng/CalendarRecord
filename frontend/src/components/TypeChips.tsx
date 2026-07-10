@@ -7,12 +7,13 @@ interface Props {
   selectedTypes: Set<number>;
   setSelectedTypes: (s: Set<number>) => void;
   onManage: () => void;
+  onOpenTagCloud: () => void;
 }
 
 const BASE =
   "inline-flex items-center gap-1.5 rounded-full border-[1.5px] px-3 py-1 text-[13px] font-semibold select-none transition hover:shadow-card";
 
-export default function TypeChips({ types, tasks, selectedTypes, setSelectedTypes, onManage }: Props) {
+export default function TypeChips({ types, tasks, selectedTypes, setSelectedTypes, onManage, onOpenTagCloud }: Props) {
   const filtering = selectedTypes.size > 0;
   const countOf = (id: number) =>
     id === UNTYPED_ID
@@ -73,9 +74,16 @@ export default function TypeChips({ types, tasks, selectedTypes, setSelectedType
       {untypedCount > 0 && chip(UNTYPED_ID, "#94a3b8", "🏷️", "未分类")}
 
       <button
+        onClick={onOpenTagCloud}
+        title="标签云"
+        className="ml-1.5 inline-flex items-center justify-center rounded-full border-[1.5px] border-dashed border-slate-300 px-2.5 py-1 text-[15px] leading-none hover:bg-brand-50 transition"
+      >
+        🏷️
+      </button>
+      <button
         onClick={onManage}
         title="类型管理"
-        className="ml-1.5 inline-flex items-center justify-center rounded-full border-[1.5px] border-dashed border-slate-300 px-2.5 py-1 text-[15px] leading-none text-brand-700 hover:bg-brand-50 transition"
+        className="inline-flex items-center justify-center rounded-full border-[1.5px] border-dashed border-slate-300 px-2.5 py-1 text-[15px] leading-none text-brand-700 hover:bg-brand-50 transition"
       >
         ⚙️
       </button>
