@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { Attachment, Priority, Status, Task, TaskType } from "../types";
 import { useTaskMutations } from "../hooks/queries";
 import { api } from "../api/client";
@@ -28,6 +28,8 @@ export default function TaskDrawer({ task, defaultDate, types, allTags, onClose 
   const [ext, setExt] = useState<Record<string, unknown>>(task?.ext_fields || {});
   const [tags, setTags] = useState<string[]>(task ? getTaskTags(task) : []);
   const [tagInput, setTagInput] = useState("");
+  const [tagEditing, setTagEditing] = useState(false);
+  const tagBoxRef = useRef<HTMLDivElement>(null);
   const [attachments, setAttachments] = useState<Attachment[]>(task?.attachments || []);
   const [rescheduleCount, setRescheduleCount] = useState(task?.reschedule_count ?? 0);
   const [err, setErr] = useState("");
@@ -45,11 +47,16 @@ export default function TaskDrawer({ task, defaultDate, types, allTags, onClose 
     else setTagInput("");
   };
   const onTagKey = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    e.stopPropagation();
     if (e.key === "Enter" || e.key === "," || e.key === "，") {
       e.preventDefault();
       commitTagInput();
     } else if (e.key === "Backspace" && !tagInput && tags.length) {
       setTags((prev) => prev.slice(0, -1));
+    } else if (e.key === "Escape") {
+      e.preventDefault();
+      setTagInput("");
+      setTagEditing(false);
     }
   };
   const removeTag = (t: string) => setTags((prev) => prev.filter((x) => x !== t));
@@ -61,6 +68,20 @@ export default function TaskDrawer({ task, defaultDate, types, allTags, onClose 
       .filter((t) => !chosen.has(t.toLowerCase()) && (!lower || t.toLowerCase().includes(lower)))
       .slice(0, 8);
   }, [allTags, tags, tagInput]);
+
+  // 编辑标签时点击别处：提交待录入文本并收起（表单仍在「保存」时统一提交）
+  useEffect(() => {
+    if (!tagEditing) return;
+    const h = (e: MouseEvent) => {
+      if (tagBoxRef.current && !tagBoxRef.current.contains(e.target as Node)) {
+        commitTagInput();
+        setTagEditing(false);
+      }
+    };
+    document.addEventListener("mousedown", h);
+    return () => document.removeEventListener("mousedown", h);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tagEditing, tagInput]);
 
   useEffect(() => {
     const onEsc = (e: KeyboardEvent) => e.key === "Escape" && onClose();
@@ -157,14 +178,86 @@ export default function TaskDrawer({ task, defaultDate, types, allTags, onClose 
         />
 
         {/* 头部 */}
-        <div className="flex items-start justify-between px-6 pt-4 pb-3 border-b border-slate-100 shrink-0">
-          <div>
-            <h3 className="text-lg font-bold text-slate-800">{isEdit ? "编辑任务" : "新增任务"}</h3>
-            <p className="text-xs text-slate-400 mt-0.5">{summary}</p>
+        <div className="flex items-start justify-between gap-3 px-6 pt-4 pb-3 border-b border-slate-100 shrink-0">
+          <div className="min-w-0 flex-1">
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
+              <h3 className="shrink-0 text-lg font-bold text-slate-800">{isEdit ? "编辑任务" : "新增任务"}</h3>
+              {tagEditing ? (
+                <div ref={tagBoxRef} className="min-w-0 flex-1 basis-[200px]">
+                  <div className="flex flex-wrap items-center gap-1.5 rounded-xl border border-brand-300 px-2 py-1.5 ring-2 ring-brand-100 transition">
+                    {tags.map((t) => {
+                      const c = tagColor(t);
+                      return (
+                        <span
+                          key={t}
+                          className="inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[12px] font-semibold"
+                          style={{ backgroundColor: c.bg, color: c.fg }}
+                        >
+                          #{t}
+                          <button
+                            type="button"
+                            onClick={() => removeTag(t)}
+                            className="leading-none opacity-60 hover:opacity-100"
+                          >
+                            ✕
+                          </button>
+                        </span>
+                      );
+                    })}
+                    <input
+                      autoFocus
+                      value={tagInput}
+                      onChange={(e) => setTagInput(e.target.value)}
+                      onKeyDown={onTagKey}
+                      placeholder={tags.length ? "" : "回车 / 逗号添加"}
+                      className="min-w-[80px] flex-1 bg-transparent py-0.5 text-sm outline-none"
+                    />
+                  </div>
+                  {suggestions.length > 0 && (
+                    <div className="mt-1.5 flex flex-wrap gap-1">
+                      {suggestions.map((s) => (
+                        <button
+                          key={s}
+                          type="button"
+                          onMouseDown={(e) => e.preventDefault()}
+                          onClick={() => addTags([s])}
+                          className="rounded-md bg-slate-100 px-2 py-0.5 text-[11px] text-slate-500 transition hover:bg-slate-200"
+                        >
+                          ＋ {s}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div
+                  onClick={() => setTagEditing(true)}
+                  title="点击编辑标签"
+                  className="flex flex-wrap items-center gap-1.5 cursor-pointer"
+                >
+                  {tags.map((t) => {
+                    const c = tagColor(t);
+                    return (
+                      <span
+                        key={t}
+                        className="inline-flex items-center rounded-md px-2 py-0.5 text-[12px] font-semibold"
+                        style={{ backgroundColor: c.bg, color: c.fg }}
+                      >
+                        #{t}
+                      </span>
+                    );
+                  })}
+                  <span className="inline-flex items-center gap-1 rounded-md border border-dashed border-slate-300 px-2 py-0.5 text-[12px] text-slate-400 transition hover:border-brand-300 hover:text-brand-500">
+                    ＋ 标签
+                  </span>
+                </div>
+              )}
+            </div>
+            <p className="text-xs text-slate-400 mt-1">{summary}</p>
           </div>
           <button
             onClick={onClose}
-            className="text-slate-400 hover:text-slate-600 text-lg leading-none -mr-1 -mt-0.5"
+            className="shrink-0 text-slate-400 hover:text-slate-600 text-lg leading-none -mr-1 -mt-0.5"
           >
             ✕
           </button>
@@ -175,52 +268,6 @@ export default function TaskDrawer({ task, defaultDate, types, allTags, onClose 
           <Section title="基本信息">
             <Field label="任务名称 *">
               <input value={title} onChange={(e) => setTitle(e.target.value)} className={inputCls} autoFocus />
-            </Field>
-
-            <Field label="标签">
-              <div className="flex flex-wrap items-center gap-1.5 rounded-xl border border-slate-200 px-2 py-2 focus-within:border-brand-500 focus-within:ring-2 focus-within:ring-brand-100 transition">
-                {tags.map((t) => {
-                  const c = tagColor(t);
-                  return (
-                    <span
-                      key={t}
-                      className="inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[12px] font-semibold"
-                      style={{ backgroundColor: c.bg, color: c.fg }}
-                    >
-                      #{t}
-                      <button
-                        type="button"
-                        onClick={() => removeTag(t)}
-                        className="leading-none opacity-60 hover:opacity-100"
-                      >
-                        ✕
-                      </button>
-                    </span>
-                  );
-                })}
-                <input
-                  value={tagInput}
-                  onChange={(e) => setTagInput(e.target.value)}
-                  onKeyDown={onTagKey}
-                  onBlur={commitTagInput}
-                  placeholder={tags.length ? "" : "回车 / 逗号添加，如 公司A、重点"}
-                  className="min-w-[90px] flex-1 bg-transparent py-0.5 text-sm outline-none"
-                />
-              </div>
-              {suggestions.length > 0 && (
-                <div className="mt-1.5 flex flex-wrap gap-1">
-                  {suggestions.map((s) => (
-                    <button
-                      key={s}
-                      type="button"
-                      onClick={() => addTags([s])}
-                      className="rounded-md bg-slate-100 px-2 py-0.5 text-[11px] text-slate-500 transition hover:bg-slate-200"
-                    >
-                      ＋ {s}
-                    </button>
-                  ))}
-                </div>
-              )}
             </Field>
 
             <div className="grid grid-cols-2 gap-3">

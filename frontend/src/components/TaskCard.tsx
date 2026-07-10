@@ -73,11 +73,13 @@ export function TaskCardBody({
   type,
   threshold,
   ownerLabel,
+  showTags = true,
 }: {
   task: Task;
   type?: TaskType;
   threshold: number;
   ownerLabel?: string;
+  showTags?: boolean;
 }) {
   const { setStatus } = useTaskMutations();
   const [hover, setHover] = useState(false);
@@ -134,7 +136,7 @@ export function TaskCardBody({
         )}
       </div>
 
-      {tags.length > 0 && (
+      {showTags && tags.length > 0 && (
         <div className="mt-1 flex flex-wrap items-center gap-1">
           {tags.map((t) => {
             const c = tagColor(t);

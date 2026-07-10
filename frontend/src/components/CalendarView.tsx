@@ -421,7 +421,7 @@ function WeekRow(r: RowProps) {
                             {task.plan_start_date.slice(5)}→{task.plan_due_date.slice(5)}
                           </div>
                         )}
-                        <TaskCardBody task={task} type={type} threshold={r.threshold} ownerLabel={r.ownerMap?.[task.owner_id]} />
+                        <TaskCardBody task={task} type={type} threshold={r.threshold} ownerLabel={r.ownerMap?.[task.owner_id]} showTags={false} />
                       </div>
                       {/* 左右缘手柄：改开始/完成日（跨天甘特） */}
                       <span
